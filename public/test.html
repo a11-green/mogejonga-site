@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>メッセージ出力アプリ</title>
+    </head>
+    <body>
+        <h1>■メッセージ出力アプリ</h1>
+ 
+        <!-- メッセージの入力エリア -->
+        <form id="form1" action="#">
+            <input type="text" id="input-message">
+            <input type="submit" onclick="clickMessageDisp()" value="メッセージを表示">
+            <br>
+            <label id="output-message"></label>
+        </form>        
+ 
+        <!-- ボタンクリック後の処理 -->
+        <script language="javascript" type="text/javascript">
+            function clickMessageDisp() {
+                var message = document.getElementById("input-message").value;
+                message = "入力したメッセージ：" + message;
+                document.getElementById("output-message").innerHTML = message;
+            }
+        </script>
+    </body>
+</html>

@@ -13,3 +13,4 @@ GitHub上でPRを作成しmergeすると自動的に自動的にfirebaseにデ�
   - [mac キーチェーンアクセスが削除できないときの対処法](https://took.jp/mac-keychain/)
 - [FirestoreにCSVをImportする方法](https://orangelog.site/firebase/firestore-csv-import/)
 - [js node 実行時エラー　ERR_PACKAGE_PATH_NOT_EXPORTED](https://teratail.com/questions/4rwqp3rtv6ev0b)
+- [Firebase Cloud Firestoreの使い方](https://qiita.com/subaru44k/items/a88e638333b8d5cc29f2)
