@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<head>
+    
+
+
+</head>
+<body >
+    <h1>Hello</h1>
+
+
+    <form  method="get" name="text_form">
+        表示したいテキスト：<input type="text" name="text1">
+        <input type="button" value="送信" onclick="returnText()">
+    </form>
+
+    <p id="returned_text">
+        結果がここに表示される
+    </p>
+
+    
+
+    <form  method="get" name="name_form">
+        名前：<input type="text" name="text2">
+        <!-- <input type="button" value="送信" onclick="return returnResult()"> -->
+        <input type="button" value="送信" onclick="returnResultTable()">
+    </form>
+
+
+    <p id="returned_result">
+        結果がここに表示される
+    </p>
+
+    <table id='resultTable'>
+        <tbody>
+            <tr>
+                <th>name</th>
+                <th>game</th>
+                <th>point</th>
+            </tr>
+        </tbody>
+    </table>
+
+
+    <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-firestore.js"></script>
+    <script src="../js/tablemagic.js"></script>
+    <script src="../js/firebaseConfig.js"></script>
+
+    <script type="module">
+        console.log("loading module...")
+        console.log(Date())
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.14.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.14.0/firebase-analytics.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+      
+    </script>
+    <script src="../js/returnResult.js"></script>
+    <script src="../js/returnText.js"></script>
+
+
+
+
+    
+
+
+
+
+
+</body>
+<body id="body">
+
+</body>
