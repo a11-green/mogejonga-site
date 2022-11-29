@@ -1,0 +1,21 @@
+{
+  "dependencies": {
+    "csv-parse": "^5.3.2",
+    "firebase-admin": "^11.2.1",
+    "fs": "^0.0.1-security"
+  },
+  "name": "firestore-import",
+  "version": "1.0.0",
+  "description": "supports csv import for firestore",
+  "main": "index.js",
+  "devDependencies": {
+    "csv-parse": "^3.2.0",
+    "firebase-admin": "^6.1.0",
+    "fs": "^0.0.1-security"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "a11-green",
+  "license": "ISC"
+}
