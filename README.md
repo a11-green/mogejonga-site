@@ -4,8 +4,10 @@ mogejonga on firebase用のリポジトリ
 ## URL
 https://mogejonga-site.web.app/
 
+
 ## Deploy
 GitHub上でPRを作成しmergeすると自動的に自動的にfirebaseにデプロイされる．
+またPRを作成した時点でプレビュー用ページが作成される（URLは毎回異なる）．
 
 ## Reference
 - [Firebase公式のGitHubとHostingのインテグレーションが熱い](https://zenn.dev/watarukun/articles/8f3e318bacf97cabf879)
