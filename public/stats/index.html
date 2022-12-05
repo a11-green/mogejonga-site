@@ -1,37 +1,62 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="UTF-8">
-        <title>Statistics</title>
-        <script src="../js/stats.js"></script>
-    </head>
-    <body>
-        <h1 id="idName">Statistics</h1>
- 
+<head>
+    <meta charset="UTF-8" />
 
-        <!-- <form id="form1" action="#">
-            <input type="text" id="input-name">
-            <input type="submit" onclick="returnResult()" value="結果を表示">
-            <br>
-        </form>    -->
-        <p id="result">
-            結果
-        </p>
-
-        <input type="button" value="Click" onclick="returnResult()" value="結果を表示">
-        <input type="button" value="Click" onclick="myfunc()">
-        
-
-    </body>
+    <!-- for danfo.js-->
+    <script src="https://cdn.jsdelivr.net/npm/danfojs@1.1.2/lib/bundle.js"></script>
+</head>
+<body >
+    <h1>Stats</h1>
     
+    <h2>stats</h2>
+    <!-- <button class="button" type="button" onclick="returnStats('浅野', 2016)">実行</button> -->
+    
+    <table id='statsTable'>
+        <tbody>
+            <tr>
+                <th>年</th>
+                <th>合計得点</th>
+                <th>平均順位</th>
+            </tr>
+        </tbody>
+    </table>
+    <script>
+        function addStatsRow(year, sumPoint, aveRank) {
+            var tableElem = document.getElementById('statsTable');
+            var trElem = tableElem.tBodies[0].insertRow(-1);
+            var cellElem0 = trElem.insertCell(0);
+            var cellElem1 = trElem.insertCell(1);
+            var cellElem2 = trElem.insertCell(2);
+            cellElem0.appendChild(document.createTextNode(year));
+            cellElem1.appendChild(document.createTextNode(sumPoint.toFixed(1)));
+            cellElem2.appendChild(document.createTextNode(aveRank.toFixed(2)));
+        }
+        
+    </script>
+    <script>
+        function returnStats(name, year) {
+            dfd.readCSV(`https://raw.githubusercontent.com/a11-green/mogejonga-site/main/db/csv/data${year}.csv`)
+            .then(df => {
+                let df_new = df.query(df["name"].eq(name));
+                var sumPoint = df_new["point"].sum({axis: 0}); 
+                console.log('hey');
+                return sumPoint;
+            })
+            .catch(err => {
+                console.log(err);
+                return 99.9
+            }) 
+        }
+    </script>
+    <script>
+        
+        let arrayYear = [2016, 2017, 2018];
+        for (const year of arrayYear) {
+            var s = returnStats('浅野', year)
+            console.log(s);
+            addStatsRow(year, s, 2.50);
+        };
+    </script>
 
-    <!-- <script>
-      var myfunc = function(){
 
-        var myh1 = document.getElementById("idName");
-        myh1.innerHTML = "クリック後";
-
-
-      }
-    </script> -->
-</html>
+</body>
