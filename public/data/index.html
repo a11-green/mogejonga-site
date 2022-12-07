@@ -9,20 +9,28 @@
     <script src="../js/csvUtil.js"></script>
 </head>
 <body >
-    <h1>results</h1>
-    <button class="button" type="button" onclick="displayTable(2016)">2016</button>
-    <button class="button" type="button" onclick="displayTable(2017)">2017</button>
-    <button class="button" type="button" onclick="displayTable(2018)">2018</button>
-    <button class="button" type="button" onclick="displayTable(2019)">2019</button>
-    <button class="button" type="button" onclick="displayTable(2020)">2020</button>
-    <button class="button" type="button" onclick="displayTable(2021)">2021</button>
-    <button class="button" type="button" onclick="displayTable(202205)">2022-1</button>
+    <h1>各年の結果</h1>
+    <button class="button" type="button" onclick="displayTable(2016), statsEachYear(2016, '浅野')">2016</button>
+    <button class="button" type="button" onclick="displayTable(2017), statsEachYear(2017, '浅野')">2017</button>
+    <button class="button" type="button" onclick="displayTable(2018), statsEachYear(2018, '浅野')">2018</button>
+    <button class="button" type="button" onclick="displayTable(2019), statsEachYear(2019, '浅野')">2019</button>
+    <button class="button" type="button" onclick="displayTable(2020), statsEachYear(2020, '浅野')">2020</button>
+    <button class="button" type="button" onclick="displayTable(2021), statsEachYear(2021, '浅野')">2021</button>
+    <button class="button" type="button" onclick="displayTable(202205), statsEachYear(202205, '浅野')">2022-1</button>
     
-    <h2>list of result</h2>
+    <h2>stats</h2>
+    <table id='dataTable'>
+        <tbody>
+            <tr>
+                <th>名前</th>
+                <th>合計得点</th>
+                <th>平均順位</th>
+            </tr>
+        </tbody>
+    </table>
+    <h2>data</h2>
     <div id="table"></div>
-
-    <button class="button" type="button" onclick="statsEachYear(2016, '浅野')">2016</button>
-    <div id="history"></div>
+    
 </body>
 
 
