@@ -10,23 +10,12 @@ h1, h2 {
 }
 
 .link {
-    position: absolute;
-    align: center;
-    width: 100%;
-    height: 100%;
-    top: 400px;
-    left: 400px;
+    top: 300px;
+    text-align: center;
+    position: relative;
 }
 
-.link a[href='/personal-data'] {
-    top: 400px;
-    left: 400px;
-}
 
-.link a[href='/list'] {
-    top: 450px;
-    left: 400px;
-}
 
 h1 {
     font-size: 26px;
