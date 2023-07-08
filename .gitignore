@@ -70,3 +70,4 @@ firebase-adminsdk.json
 *adminsdk*.json
 db/node_modules/*
 public/js/firebaseConfig.js
+db/planetscale/*
