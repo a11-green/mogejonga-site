@@ -1,35 +1,51 @@
 <!DOCTYPE html>
+
 <head>
     <meta charset="UTF-8" />
+    <title>mogejonga</title>
+    <link rel="stylesheet" href="../css/layout.css" >
 
     <!-- for danfo.js-->
     <script src="https://cdn.jsdelivr.net/npm/danfojs@1.1.2/lib/bundle.js"></script>
-
     <!-- my func -->
     <script src="../js/csvUtil.js"></script>
 </head>
-<body >
-    <h1>各年の結果</h1>
-    <button class="button" type="button" onclick="displayTable(2016), statsEachYear(2016, '浅野')">2016</button>
-    <button class="button" type="button" onclick="displayTable(2017), statsEachYear(2017, '浅野')">2017</button>
-    <button class="button" type="button" onclick="displayTable(2018), statsEachYear(2018, '浅野')">2018</button>
-    <button class="button" type="button" onclick="displayTable(2019), statsEachYear(2019, '浅野')">2019</button>
-    <button class="button" type="button" onclick="displayTable(2020), statsEachYear(2020, '浅野')">2020</button>
-    <button class="button" type="button" onclick="displayTable(2021), statsEachYear(2021, '浅野')">2021</button>
-    <button class="button" type="button" onclick="displayTable(202205), statsEachYear(202205, '浅野')">2022-1</button>
-    
-    <h2>stats</h2>
-    <table id='dataTable'>
-        <tbody>
-            <tr>
-                <th>名前</th>
-                <th>合計得点</th>
-                <th>平均順位</th>
-            </tr>
-        </tbody>
-    </table>
+
+<body> 
+    <div class="header">
+        <header>
+            <ul class="header-list">
+                <li><a href="../index.html" class="link-to">Home</a></li>
+                <li><a href="./index.html" class="link-now">Data</a></li>
+                <li><a href="../stats/index.html" class="link-to">Stats</a></li>
+                </ul>
+        </header>
+    </div>
+
+    <div class="select">
+        <div class="select-year">
+            <select onchange="displayTable(this.value), showTable(this.value)">
+                <option value="">Select Year</option>
+                <option value="2016">2016</option>
+                <option value="2017">2017</option>
+                <option value="2018">2018</option>
+                <option value="2018">2019</option>
+                <option value="2018">2020</option>
+                <option value="2018">2021</option>
+                <option value="2018">202205</option>
+            </select>
+        </div>
+    </div>
+
+
     <h2>data</h2>
     <div id="table"></div>
+
+    <div id="table-container">
+
+    </div>
+
+      
     
 </body>
 

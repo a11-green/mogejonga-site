@@ -1,27 +1,17 @@
 function displayTable(year) {
     dfd.readCSV(`https://raw.githubusercontent.com/a11-green/mogejonga-site/main/db/csv/data${year}.csv`)
     .then(df => {
-        df.plot("table").table();
-
         const layout = {
-            title: "Point History",
-            xaxis: {
-                title: "X",
-            },
-            yaxis: {
-                title: "Y",
-            },
+            width: 1000,
         };
-
-        const config = {
-            columns: ["point"],
-        };
-        // df.query(df["name"].eq("浅野")).setIndex({ column: "game" }).plot("history").line({layout, config});
+        df.plot("table").table();
     })
     .catch(err => {
         console.log(err);
     }) 
 };
+
+
 
 function statsEachYear(year, name) {
     dfd.readCSV(`https://raw.githubusercontent.com/a11-green/mogejonga-site/main/db/csv_new/data${year}_processed.csv`)
@@ -37,10 +27,10 @@ function statsEachYear(year, name) {
             height: 300,
             width: 400,
             margin: {
-                r:100,
-                b:20,
-                l:100,
-                t:20,
+                r:10,
+                b:0,
+                l:10,
+                t:0,
                 pad:10
             },
         };
