@@ -61,7 +61,7 @@ header ul li {
 body{
     /* Background */
     background-color: #486d46;
-    background-image: url("../img/image02.jpeg");
+    background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3), url("../img/image02.jpeg"));
     background-size: cover;
     background-attachment: fixed;
     background-position: center center;
@@ -70,100 +70,13 @@ body{
     color: #fff;
     float: left;
 }
-/* .bg::before{
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    display: block;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0, 0.7);
-    /* pointer-events: none; */
-  /* } */ */
 
-/* div.header{
-    background-color: rgba(255,255,255, 0.2);
-    position: fixed;
-    top: 30px;
-    width: 100%;
-    height: 60px;
-} */
-
-/* h1, h2.home {
-    top: 200px;
-    text-align: center;
-    position: relative;
-
-}
-
-.link {
-    top: 300px;
-    text-align: center;
-    position: relative;
-}
-
-
-
-h1 {
-    font-size: 42px; */
-	/* font-weight: bold; */
-	/* color: #fff;
-}
-h2 {
-	font-size: 24px;
-	color: #fff;
-} */
-/*  
-a {
-
-}
-.button-b {
-    border-radius: 0;
-    color: #fff;
-  }
-  
-.button-b:before,
-.button-b:after {
-position: absolute;
-
-width: 100%;
-height: 2px;
-
-content: '';
--webkit-transition: all .3s;
-transition: all .3s;
-
-background: #fff;
-}
-
-.button-b:before {
-top: 0;
-left: 0;
-}
-
-.button-b:after {
-right: 0;
-bottom: 0;
-}
-
-.button-b:hover:before,
-.button-b:hover:after {
-width: 0;
-} */
-  
 
 select{
     padding:10px;
     width:40%;
     
 }
-  
-/* div.select{
-    position: absolute;
-    padding: 20px;
-    z-index: 1;
-} */
 
 /* Table */
 table{
