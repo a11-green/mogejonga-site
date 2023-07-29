@@ -61,7 +61,7 @@ header ul li {
 body{
     /* Background */
     background-color: #486d46;
-    background-image: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8), url("../img/image02.jpeg"));
+    background-image:  url("https://thumb.photo-ac.com/d3/d3944aa72b29febca7a4155611b76ae5_t.jpeg");
     background-size: cover;
     background-attachment: fixed;
     background-position: center center;
@@ -69,6 +69,12 @@ body{
     /* Contents */
     color: #fff;
     float: left;
+}
+
+.contents{
+    background-color: rgba(0, 0, 0, 0.5);
+    margin: 20px;
+    padding: 20px;
 }
 
 
@@ -83,8 +89,12 @@ table{
     color: #fff;
     border-collapse: collapse;
 }
+tr td:nth-of-type(1){
+    text-align:left;
+}
 th , td {
     border-bottom:1px solid #fff;
+    padding: 10px 20px;
 }
 th {
     border-top:1px solid #fff;
