@@ -23,33 +23,120 @@
         </header>
     </div>
 
-    <div class="select">
-        <div class="select-year">
-            <select onchange="statsEachYear(this.value, '浅野')">
-                <option value="">Select Year</option>
-                <option value="2016">2016</option>
-                <option value="2017">2017</option>
-                <option value="2018">2018</option>
-                <option value="2018">2019</option>
-                <option value="2018">2020</option>
-                <option value="2018">2021</option>
-                <option value="2018">202205</option>
-            
-            </select>
-        </div>
+    <div class="contents">
+        <!-- <div class="select">
+            <div class="select-year">
+                <select onchange="statsEachYear(this.value, '浅野')">
+                    <option value="">Select Year</option>
+                    <option value="2016">2016</option>
+                    <option value="2017">2017</option>
+                    <option value="2018">2018</option>
+                    <option value="2018">2019</option>
+                    <option value="2018">2020</option>
+                    <option value="2018">2021</option>
+                    <option value="2018">202205</option>
+                
+                </select>
+            </div>
+        </div> -->
+        
+
+        <h2>
+            優勝
+        </h2>
+        <table id='wins'>
+            <tbody>
+                <tr>
+                    <th></th>
+                    <th>浅野</th>
+                    <th>近藤</th>
+                    <th>長屋</th>
+                    <th>諏訪</th>
+                    <th>枝松</th>
+                    <th>落合</th>
+                    <th>土橋</th>
+                    <th>中山</th>
+                    <th>菊地</th>
+                    <th>仲</th>
+                </tr>
+                <tr>
+                    <th>🀙 2016</th><th></th><th></th><th>🀢</th><th></th><th></th><th></th><th></th><th></th><th></th>
+                </tr>
+                <tr>
+                    <th>🀚 2017</th><th>🀢</th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+                </tr>
+                <tr>
+                    <th>🀛 2018</th><th></th><th></th><th>🀢</th><th></th><th></th><th></th><th></th><th></th><th></th>
+                </tr>
+                <tr>
+                    <th>🀜 2019</th><th></th><th></th><th></th><th></th><th>🀢</th><th></th><th></th><th></th><th></th>
+                </tr>
+                <tr>
+                    <th>🀝 2020</th><th></th><th>🀢</th><th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+                </tr>
+                <tr>
+                    <th>🀞 2021</th><th></th><th>🀢</th><th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+                </tr>
+                <tr>
+                    <th>🀟 2022-5</th><th></th><th></th><th></th><th></th><th></th><th></th><th>🀢</th><th></th><th></th>
+                </tr>
+                <tr>
+                    <th>🀠 2022-12</th><th></th><th>🀢</th><th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+                </tr>
+                <tr>
+                    <th>🀡 2023</th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>予選合計得点　</h2>
+        
+        <table id='point_sum'>
+            <tbody>
+                <tr>
+                    <th></th>
+                    <th>浅野</th>
+                    <th>近藤</th>
+                    <th>長屋</th>
+                    <th>諏訪</th>
+                    <th>枝松</th>
+                    <th>落合</th>
+                    <th>土橋</th>
+                    <th>中山</th>
+                    <th>菊地</th>
+                    <th>仲</th>
+                </tr>
+                <tr>
+                    <th>🀙 2016</th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+                </tr>
+                <tr>
+                    <th>🀚 2017</th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+                </tr>
+                <tr>
+                    <th>🀛 2018</th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+                </tr>
+                <tr>
+                    <th>🀜 2019</th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+                </tr>
+                <tr>
+                    <th>🀝 2020</th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+                </tr>
+                <tr>
+                    <th>🀞 2021</th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+                </tr>
+                <tr>
+                    <th>🀟 2022-5</th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+                </tr>
+                <tr>
+                    <th>🀠 2022-12</th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+                </tr>
+                <tr>
+                    <th>🀡 2023</th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+                </tr>
+            </tbody>
+        </table>
     </div>
-
-
-
-    <table id='dataTable'>
-        <tbody>
-            <tr>
-                <th>名前</th>
-                <th>合計得点</th>
-                <th>平均順位</th>
-            </tr>
-        </tbody>
-    </table>
+    
 
 
 
