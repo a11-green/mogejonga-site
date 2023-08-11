@@ -53,8 +53,8 @@ for year in years:
         else:
             point_all[name] = point_of_year[name]
 
-
+df_point = df_point.set_index("year")
 df_point.loc['Total'] = df_point.sum(numeric_only=True)
-df_point["year"].loc['Total'] = "Total"
+# df_point.loc['Total'] = "Total"
 print(df_point)
 df_point.to_html("point_of_year.html")
