@@ -30,6 +30,7 @@ def point_sum(year):
     return points
 
 
+
 years = [
     "2016",
     "2017",
