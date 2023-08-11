@@ -23,3 +23,5 @@ GitHub上でPRを作成しmergeすると自動的に自動的にfirebaseにデ�
 
 ### Database
 - [PlanetScaleというサーバレスDBが凄く勢いのあるサービスらしいのでQuick Startやってみた](https://qiita.com/tak001/items/cfbaa9dcb542929ff235)
+
+### GAS
