@@ -57,6 +57,10 @@ for year in years:
 
 point_all = {}
 rank_dist_all = {}
+rank_1st_all = {}
+rank_2nd_all = {}
+rank_3rd_all = {}
+rank_4th_all = {}
 rank_ave_all = {}
 cols = ["year", "浅野","近藤","長屋","諏訪","枝松","落合","土橋","中山","菊地","仲"]
 df_point = pd.DataFrame(columns=cols)
@@ -80,11 +84,18 @@ for year in years:
         
 for name in rank_dist_all:
     n1, n2, n3, n4 = tuple(rank_dist_all[name])
+    rank_1st_all[name] = n1
+    rank_2nd_all[name] = n2
+    rank_3rd_all[name] = n3
+    rank_4th_all[name] = n4
     rank_ave_all[name] = (1*n1+2*n2+3*n3+4*n4)/(n1+n2+n3+n4)
 
 cols = ["浅野","近藤","長屋","諏訪","枝松","落合","土橋","中山","菊地","仲"]
 df_rank = pd.DataFrame(columns=cols)
-df_rank = df_rank.append(rank_dist_all, ignore_index=True)
+df_rank = df_rank.append(rank_1st_all, ignore_index=True)
+df_rank = df_rank.append(rank_2nd_all, ignore_index=True)
+df_rank = df_rank.append(rank_3rd_all, ignore_index=True)
+df_rank = df_rank.append(rank_4th_all, ignore_index=True)
 df_rank = df_rank.append(rank_ave_all, ignore_index=True)
 
 df_point = df_point.set_index("year")
