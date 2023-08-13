@@ -104,6 +104,7 @@ df_point.loc['Total'] = df_point.sum(numeric_only=True)
 # print(df_point)
 print(rank_dist_all)
 print(rank_ave_all)
+pd.options.display.float_format = '{:.2f}'.format
 df_point.to_html("point_of_year.html")
 df_rank.to_html("rank.html")
 
