@@ -36,7 +36,7 @@ def get_data(year):
     return points, rank_dist
 
 
-
+                       
 
 
 
