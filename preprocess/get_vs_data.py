@@ -10,14 +10,16 @@ def init_dic():
     return dic
 
 def get_vs_data():
-    names = ["浅野","近藤","長屋","諏訪","枝松","落合","土橋","中山","菊地", "仲", "長山"]
-    years = ["2016","2017","2018","2019","2020","2021","202205","202212"]
+    names = ["浅野","近藤","長屋","諏訪","枝松","落合","土橋","中山","菊地", "仲", "長山", "藤好"]
+    years = ["2016","2017","2018","2019","2020","2021","202205","202212","2023"]
     # res1 = dict.fromkeys(names, dict.fromkeys(names, 0))
     # res2 = dict.fromkeys(names, dict.fromkeys(names, 0))
 
-    res1 = np.zeros((11, 11))
-    res2 = np.zeros((11, 11))
-    tot_game = np.zeros((11, 11))
+    n = len(names)
+    print(n)
+    res1 = np.zeros((n, n))
+    res2 = np.zeros((n, n))
+    tot_game = np.zeros((n, n))
 
     print(res1)
     for year in years:
@@ -61,7 +63,7 @@ def get_vs_data():
           
 
                     
-                    if year == '2016':
+                    if year == '2023':
                         print(game[i], dic["A"])
                         print(game[i], dic["B"])
 
@@ -80,6 +82,8 @@ def get_vs_data():
 
     pd.options.display.float_format = '{:.2f}'.format
 
+    print(res2)
+    print(tot_game)
     
     res3 = np.divide(res2, tot_game)
     df2 = pd.DataFrame(res3, index=names, columns=names)
