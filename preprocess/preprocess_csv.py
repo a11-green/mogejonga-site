@@ -49,11 +49,13 @@ years = [
     "2021",
     "202205",
     "202212",
-    "2023"
+    "2023",
+    "202406",
+    "202412"
 ]
 
-for year in years:
-    proc(year)
+# for year in years:
+#     proc(year)
 
 
 point_all = {}
@@ -63,9 +65,10 @@ rank_2nd_all = {}
 rank_3rd_all = {}
 rank_4th_all = {}
 rank_ave_all = {}
-cols = ["year", "浅野","近藤","長屋","諏訪","枝松","落合","土橋","中山","菊地","仲"]
+cols = ["year", "浅野","近藤","長屋","諏訪","枝松","落合","土橋","中山","菊地","仲","藤好","きんつ","三田村","森田"]
 df_point = pd.DataFrame(columns=cols)
 for year in years:
+    print(year)
     point_of_year, rank_dist_of_year = get_data(year)
     point_of_year["year"] = year 
     # rank_dist_of_year["year"] = year
@@ -91,7 +94,7 @@ for name in rank_dist_all:
     rank_4th_all[name] = n4
     rank_ave_all[name] = (1*n1+2*n2+3*n3+4*n4)/(n1+n2+n3+n4)
 
-cols = ["浅野","近藤","長屋","諏訪","枝松","落合","土橋","中山","菊地","仲"]
+cols = ["year", "浅野","近藤","長屋","諏訪","枝松","落合","土橋","中山","菊地","仲","藤好","きんつ","三田村","森田"]
 df_rank = pd.DataFrame(columns=cols)
 df_rank = df_rank.append(rank_1st_all, ignore_index=True)
 df_rank = df_rank.append(rank_2nd_all, ignore_index=True)

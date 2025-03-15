@@ -71,3 +71,4 @@ firebase-adminsdk.json
 db/node_modules/*
 public/js/firebaseConfig.js
 db/planetscale/*
+db/gas/*
