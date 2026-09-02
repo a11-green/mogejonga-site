@@ -9,7 +9,6 @@
   "description": "supports csv import for firestore",
   "main": "index.js",
   "devDependencies": {
-    "csv-parse": "^3.2.0",
     "firebase-admin": "^6.1.0",
     "fs": "^0.0.1-security"
   },
