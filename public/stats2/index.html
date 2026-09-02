@@ -48,13 +48,13 @@
     <div id="stats-content" style="display:none;">
 
       <h2>予選得点</h2>
-      <p style="color:#aaa; font-size:0.85em;">予選(status=Q)のpoint合計。NaN=不参加。</p>
+      <p style="color:#aaa; font-size:0.85em;">予選・SF(status=Q/SF)のpoint合計。NaN=不参加。</p>
       <div style="overflow-x:auto;">
         <table id="tbl-points" class="table_stats"></table>
       </div>
 
       <h2 style="margin-top:40px;">着順分布</h2>
-      <p style="color:#aaa; font-size:0.85em;">予選の1〜4位回数と平均着順。</p>
+      <p style="color:#aaa; font-size:0.85em;">予選・SFの1〜4位回数と平均着順。</p>
       <div style="overflow-x:auto;">
         <table id="tbl-ranks" class="table_stats"></table>
       </div>
@@ -90,9 +90,9 @@
     // ----- メイン処理 -----
     async function main() {
       try {
-        // 予選レコードを全件取得
+        // 予選・セミファイナルレコードを全件取得
         const snapshot = await db.collection("gameResult")
-          .where("status", "==", "Q")
+          .where("status", "in", ["Q", "SF"])
           .get();
 
         const records = snapshot.docs.map(d => d.data());
