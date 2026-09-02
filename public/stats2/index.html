@@ -65,10 +65,18 @@
   <!-- Firebase SDK (compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <!-- Firebase設定（このファイルは .gitignore 対象） -->
-  <script src="../js/firebaseConfig.js"></script>
 
   <script>
+    // ----- Firebase設定 -----
+    const firebaseConfig = {
+      apiKey:            "AIzaSyAmCR3LPPTbwaGaZklCyvNpX-1ZrqN9dGg",
+      authDomain:        "mogejonga-site.firebaseapp.com",
+      projectId:         "mogejonga-site",
+      storageBucket:     "mogejonga-site.firebasestorage.app",
+      messagingSenderId: "544731021968",
+      appId:             "1:544731021968:web:548739d70cf3c790c8ce15",
+    };
+
     // ----- 年の表示順（時系列） -----
     const YEAR_ORDER = [
       "2016","2017","2018","2019","2020","2021",

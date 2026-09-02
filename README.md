@@ -27,3 +27,8 @@ GitHub上でPRを作成しmergeすると自動的に自動的にfirebaseにデ�
 ### GAS
 - [Google スプレッドシートのデータを JS で fetch したい！](https://qiita.com/otchy/items/9acf845314e06c9971bc)
 - [第15回.複数のスプレッドシートを扱う](https://excel-ubara.com/apps_script1/GAS015.html)
+
+### git, github
+- [SSHでpush](https://qiita.com/uki66/items/d6e13c4e160071458f3a)
+- [公開鍵認証](https://qiita.com/shizuma/items/2b2f873a0034839e47ce)
+  - [github/鍵の設定](https://github.com/settings/keys)  
