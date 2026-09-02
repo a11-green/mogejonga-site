@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>mogejonga - Data</title>
+  <link rel="stylesheet" href="../css/layout.css">
+  <style>
+    .year-selector {
+      margin-bottom: 24px;
+    }
+
+    .games-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* ゲームカード */
+    .game-card {
+      background: rgba(0, 0, 0, 0.45);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .game-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .game-number {
+      font-weight: bold;
+      font-size: 1.05em;
+    }
+
+    .status-badge {
+      font-size: 0.72em;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.15);
+      letter-spacing: 1px;
+    }
+    .status-badge.sf { background: rgba(100, 160, 255, 0.3); }
+    .status-badge.f  { background: rgba(255, 200, 50, 0.3); }
+
+    /* A卓・B卓の横並び */
+    .tables {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .table-section {
+      padding: 12px 16px;
+    }
+
+    .table-section + .table-section {
+      border-left: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .table-label {
+      font-size: 0.8em;
+      font-weight: bold;
+      color: #aaa;
+      letter-spacing: 3px;
+      margin-bottom: 8px;
+    }
+
+    /* プレイヤー行 */
+    .player-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .player-row:last-child {
+      border-bottom: none;
+    }
+
+    .rank-badge {
+      width: 30px;
+      font-size: 0.85em;
+      font-weight: bold;
+      flex-shrink: 0;
+      text-align: center;
+    }
+    .rank-1 { color: #ffd700; }
+    .rank-2 { color: #c0c0c0; }
+    .rank-3 { color: #cd7f32; }
+    .rank-4 { color: #777; }
+
+    .player-name {
+      flex: 1;
+      font-size: 0.95em;
+    }
+
+    .player-point {
+      font-family: monospace;
+      font-size: 0.9em;
+      min-width: 52px;
+      text-align: right;
+    }
+    .point-pos  { color: #7fc97f; }
+    .point-neg  { color: #f88070; }
+    .point-zero { color: #ccc; }
+
+    /* その他 */
+    .placeholder {
+      text-align: center;
+      color: #888;
+      padding: 48px 0;
+    }
+    .loading-msg {
+      color: #aaa;
+      padding: 12px 0;
+    }
+    .error-msg {
+      color: #f88;
+      padding: 12px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <header>
+      <ul class="header-list">
+        <li><a href="../index.html"        class="link-to">Home</a></li>
+        <li><a href="./index.html"         class="link-now">Data</a></li>
+        <li><a href="../stats2/index.html" class="link-to">Stats</a></li>
+        <li><a href="../regulation/index.html" class="link-to">Regulation</a></li>
+      </ul>
+    </header>
+  </div>
+
+  <div class="contents">
+    <div class="year-selector">
+      <select onchange="loadYear(this.value)">
+        <option value="">-- 年を選択 --</option>
+        <option value="2016">2016</option>
+        <option value="2017">2017</option>
+        <option value="2018">2018</option>
+        <option value="2019">2019</option>
+        <option value="2020">2020</option>
+        <option value="2021">2021</option>
+        <option value="202205">2022前期</option>
+        <option value="202212">2022後期</option>
+        <option value="2023">2023</option>
+        <option value="202406">2024前期</option>
+        <option value="202412">2024後期</option>
+      </select>
+    </div>
+
+    <div id="loading" class="loading-msg" style="display:none;">読み込み中...</div>
+    <div id="error"   class="error-msg"   style="display:none;"></div>
+    <div id="container">
+      <div class="placeholder">年を選択してください</div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey:            "AIzaSyAmCR3LPPTbwaGaZklCyvNpX-1ZrqN9dGg",
+      authDomain:        "mogejonga-site.firebaseapp.com",
+      projectId:         "mogejonga-site",
+      storageBucket:     "mogejonga-site.firebasestorage.app",
+      messagingSenderId: "544731021968",
+      appId:             "1:544731021968:web:548739d70cf3c790c8ce15",
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    async function loadYear(year) {
+      const container = document.getElementById("container");
+      const loading   = document.getElementById("loading");
+      const errorEl   = document.getElementById("error");
+
+      if (!year) {
+        container.innerHTML = '<div class="placeholder">年を選択してください</div>';
+        return;
+      }
+
+      loading.style.display = "block";
+      errorEl.style.display = "none";
+      container.innerHTML = "";
+
+      try {
+        const snapshot = await db.collection("gameResult")
+          .where("year", "==", year)
+          .get();
+
+        const records = snapshot.docs.map(d => d.data());
+
+        // ゲームNoでグルーピング
+        const games = {};
+        for (const r of records) {
+          if (!games[r.game]) games[r.game] = { A: [], B: [], status: r.status };
+          (r.groups === "A" ? games[r.game].A : games[r.game].B).push(r);
+        }
+
+        // ゲームNo昇順、各卓は着順でソート
+        const gameNums = Object.keys(games).map(Number).sort((a, b) => a - b);
+        for (const n of gameNums) {
+          games[n].A.sort((a, b) => a.rank - b.rank);
+          games[n].B.sort((a, b) => a.rank - b.rank);
+        }
+
+        const grid = document.createElement("div");
+        grid.className = "games-grid";
+        for (const n of gameNums) grid.appendChild(buildCard(n, games[n]));
+        container.appendChild(grid);
+
+      } catch (err) {
+        errorEl.textContent = "エラー: " + err.message;
+        errorEl.style.display = "block";
+      } finally {
+        loading.style.display = "none";
+      }
+    }
+
+    function buildCard(gameNo, g) {
+      const card = document.createElement("div");
+      card.className = "game-card";
+
+      const statusClass = { SF: "sf", F: "f" }[g.status] || "";
+      card.innerHTML = `
+        <div class="game-header">
+          <span class="game-number">Game ${gameNo}</span>
+          <span class="status-badge ${statusClass}">${g.status}</span>
+        </div>
+        <div class="tables"></div>
+      `;
+
+      const tables = card.querySelector(".tables");
+      tables.appendChild(buildTableSection("A 卓", g.A));
+      tables.appendChild(buildTableSection("B 卓", g.B));
+
+      return card;
+    }
+
+    function buildTableSection(label, players) {
+      const section = document.createElement("div");
+      section.className = "table-section";
+
+      const labelEl = document.createElement("div");
+      labelEl.className = "table-label";
+      labelEl.textContent = label;
+      section.appendChild(labelEl);
+
+      if (players.length === 0) {
+        const empty = document.createElement("div");
+        empty.style.color = "#666";
+        empty.style.fontSize = "0.85em";
+        empty.textContent = "—";
+        section.appendChild(empty);
+        return section;
+      }
+
+      for (const p of players) {
+        const rank = Math.round(p.rank);
+        const rankLabels = ["", "1位", "2位", "3位", "4位"];
+        const pointClass = p.point > 0 ? "point-pos" : p.point < 0 ? "point-neg" : "point-zero";
+        const pointStr   = (p.point > 0 ? "+" : "") + p.point.toFixed(1);
+
+        const row = document.createElement("div");
+        row.className = "player-row";
+        row.innerHTML = `
+          <span class="rank-badge rank-${rank}">${rankLabels[rank] ?? rank + "位"}</span>
+          <span class="player-name">${p.name}</span>
+          <span class="player-point ${pointClass}">${pointStr}</span>
+        `;
+        section.appendChild(row);
+      }
+
+      return section;
+    }
+  </script>
+</body>
+</html>
