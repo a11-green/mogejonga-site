@@ -5,131 +5,124 @@
   <title>mogejonga - Data</title>
   <link rel="stylesheet" href="../css/layout.css">
   <style>
-    .year-selector {
-      margin-bottom: 24px;
-    }
-
+    /* ===== ゲームカード ===== */
     .games-grid {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 6px;
     }
 
-    /* ゲームカード */
+    /*
+      6列グリッド:
+        col1: Game No + Status (全6行をspan)
+        col2: 卓名 (A卓 / B卓)
+        col3-6: プレイヤー列 (1位〜4位)
+    */
     .game-card {
+      display: grid;
+      grid-template-columns: 72px 48px repeat(4, 1fr);
       background: rgba(0, 0, 0, 0.45);
       border-radius: 8px;
       overflow: hidden;
     }
 
-    .game-header {
+    /* ゲーム情報セル: 全6行span */
+    .game-info {
+      grid-column: 1;
+      grid-row: 1 / span 6;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 10px;
-      padding: 8px 16px;
-      background: rgba(255, 255, 255, 0.08);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 4px;
+      border-right: 1px solid rgba(255, 255, 255, 0.15);
+      text-align: center;
     }
 
-    .game-number {
+    .game-num {
       font-weight: bold;
-      font-size: 1.05em;
+      font-size: 0.9em;
+      line-height: 1.3;
     }
 
     .status-badge {
-      font-size: 0.72em;
-      padding: 2px 8px;
+      font-size: 0.68em;
+      padding: 2px 7px;
       border-radius: 4px;
       background: rgba(255, 255, 255, 0.15);
       letter-spacing: 1px;
     }
     .status-badge.sf { background: rgba(100, 160, 255, 0.3); }
-    .status-badge.f  { background: rgba(255, 200, 50, 0.3); }
+    .status-badge.f  { background: rgba(255, 200, 50,  0.3); }
 
-    /* A卓・B卓の横並び */
-    .tables {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+    /* ===== 各セル共通 ===== */
+    .cell {
+      padding: 5px 6px;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .table-section {
-      padding: 12px 16px;
+    /* B卓の先頭行に区切り線 */
+    .b-sep {
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
     }
 
-    .table-section + .table-section {
-      border-left: 1px solid rgba(255, 255, 255, 0.15);
-    }
-
-    .table-label {
+    /* 卓名セル */
+    .tbl-name {
       font-size: 0.8em;
       font-weight: bold;
       color: #aaa;
-      letter-spacing: 3px;
-      margin-bottom: 8px;
+      letter-spacing: 2px;
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      /* 卓名は3行分の高さを持つ (header + names + points) */
+      grid-row: span 3;
+      writing-mode: horizontal-tb;
     }
 
-    /* プレイヤー行 */
-    .player-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 5px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    .player-row:last-child {
-      border-bottom: none;
-    }
-
-    .rank-badge {
-      width: 30px;
-      font-size: 0.85em;
+    /* 着順ヘッダー */
+    .rank-hdr {
+      font-size: 0.75em;
       font-weight: bold;
-      flex-shrink: 0;
-      text-align: center;
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
     .rank-1 { color: #ffd700; }
     .rank-2 { color: #c0c0c0; }
     .rank-3 { color: #cd7f32; }
     .rank-4 { color: #777; }
 
-    .player-name {
-      flex: 1;
+    /* プレイヤー名 */
+    .pname {
       font-size: 0.95em;
     }
 
-    .player-point {
+    /* ポイント */
+    .pt {
       font-family: monospace;
-      font-size: 0.9em;
-      min-width: 52px;
-      text-align: right;
+      font-size: 0.85em;
+      padding-top: 2px;
     }
-    .point-pos  { color: #7fc97f; }
-    .point-neg  { color: #f88070; }
-    .point-zero { color: #ccc; }
+    .pos  { color: #7fc97f; }
+    .neg  { color: #f88070; }
+    .zero { color: #ccc; }
 
-    /* その他 */
-    .placeholder {
-      text-align: center;
-      color: #888;
-      padding: 48px 0;
-    }
-    .loading-msg {
-      color: #aaa;
-      padding: 12px 0;
-    }
-    .error-msg {
-      color: #f88;
-      padding: 12px 0;
-    }
+    /* ===== その他 ===== */
+    .year-selector { margin-bottom: 20px; }
+    .placeholder   { text-align: center; color: #888; padding: 48px 0; }
+    .loading-msg   { color: #aaa; padding: 10px 0; }
+    .error-msg     { color: #f88; padding: 10px 0; }
   </style>
 </head>
 <body>
   <div class="header">
     <header>
       <ul class="header-list">
-        <li><a href="../index.html"        class="link-to">Home</a></li>
-        <li><a href="./index.html"         class="link-now">Data</a></li>
-        <li><a href="../stats2/index.html" class="link-to">Stats</a></li>
+        <li><a href="../index.html"            class="link-to">Home</a></li>
+        <li><a href="./index.html"             class="link-now">Data</a></li>
+        <li><a href="../stats2/index.html"     class="link-to">Stats</a></li>
         <li><a href="../regulation/index.html" class="link-to">Regulation</a></li>
       </ul>
     </header>
@@ -175,6 +168,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    // ===== データ取得 =====
     async function loadYear(year) {
       const container = document.getElementById("container");
       const loading   = document.getElementById("loading");
@@ -223,61 +217,68 @@
       }
     }
 
+    // ===== カード生成 =====
     function buildCard(gameNo, g) {
       const card = document.createElement("div");
       card.className = "game-card";
 
-      const statusClass = { SF: "sf", F: "f" }[g.status] || "";
-      card.innerHTML = `
-        <div class="game-header">
-          <span class="game-number">Game ${gameNo}</span>
-          <span class="status-badge ${statusClass}">${g.status}</span>
-        </div>
-        <div class="tables"></div>
+      // col1: Game No + Status (6行span はCSSで指定済み)
+      const statusKey = { SF: "sf", F: "f" }[g.status] || "";
+      const info = document.createElement("div");
+      info.className = "game-info";
+      info.innerHTML = `
+        <span class="game-num">Game<br>${gameNo}</span>
+        <span class="status-badge ${statusKey}">${g.status}</span>
       `;
+      card.appendChild(info);
 
-      const tables = card.querySelector(".tables");
-      tables.appendChild(buildTableSection("A 卓", g.A));
-      tables.appendChild(buildTableSection("B 卓", g.B));
+      // A卓・B卓の各行を追加
+      appendTableRows(card, "A卓", g.A, false);
+      appendTableRows(card, "B卓", g.B, true);
 
       return card;
     }
 
-    function buildTableSection(label, players) {
-      const section = document.createElement("div");
-      section.className = "table-section";
+    const RANK_LABELS = ["", "1位", "2位", "3位", "4位"];
 
-      const labelEl = document.createElement("div");
-      labelEl.className = "table-label";
-      labelEl.textContent = label;
-      section.appendChild(labelEl);
+    function appendTableRows(card, label, players, isBTable) {
+      const sep = isBTable ? " b-sep" : "";
 
-      if (players.length === 0) {
-        const empty = document.createElement("div");
-        empty.style.color = "#666";
-        empty.style.fontSize = "0.85em";
-        empty.textContent = "—";
-        section.appendChild(empty);
-        return section;
+      // --- 行1: 卓名 (3行span) + 着順ヘッダー ---
+      const tblNameEl = document.createElement("div");
+      tblNameEl.className = `cell tbl-name${sep}`;
+      tblNameEl.textContent = label;
+      card.appendChild(tblNameEl);
+
+      for (let r = 1; r <= 4; r++) {
+        const el = document.createElement("div");
+        el.className = `cell rank-hdr rank-${r}${sep}`;
+        el.textContent = RANK_LABELS[r];
+        card.appendChild(el);
       }
 
-      for (const p of players) {
-        const rank = Math.round(p.rank);
-        const rankLabels = ["", "1位", "2位", "3位", "4位"];
-        const pointClass = p.point > 0 ? "point-pos" : p.point < 0 ? "point-neg" : "point-zero";
-        const pointStr   = (p.point > 0 ? "+" : "") + p.point.toFixed(1);
-
-        const row = document.createElement("div");
-        row.className = "player-row";
-        row.innerHTML = `
-          <span class="rank-badge rank-${rank}">${rankLabels[rank] ?? rank + "位"}</span>
-          <span class="player-name">${p.name}</span>
-          <span class="player-point ${pointClass}">${pointStr}</span>
-        `;
-        section.appendChild(row);
+      // --- 行2: プレイヤー名 ---
+      for (let i = 0; i < 4; i++) {
+        const el = document.createElement("div");
+        el.className = "cell pname";
+        el.textContent = players[i]?.name ?? "—";
+        card.appendChild(el);
       }
 
-      return section;
+      // --- 行3: ポイント ---
+      for (let i = 0; i < 4; i++) {
+        const el = document.createElement("div");
+        if (players[i]) {
+          const pt = players[i].point;
+          const cls = pt > 0 ? "pos" : pt < 0 ? "neg" : "zero";
+          el.className = `cell pt ${cls}`;
+          el.textContent = (pt > 0 ? "+" : "") + pt.toFixed(1);
+        } else {
+          el.className = "cell pt zero";
+          el.textContent = "—";
+        }
+        card.appendChild(el);
+      }
     }
   </script>
 </body>
