@@ -1,1049 +1,213 @@
 <!DOCTYPE html>
-
+<html lang="ja">
 <head>
-    <meta charset="UTF-8" />
-    <title>mogejonga</title>
-    <link rel="stylesheet" href="../css/layout.css" >
-
-    <!-- for danfo.js-->
-    <script src="https://cdn.jsdelivr.net/npm/danfojs@1.1.2/lib/bundle.js"></script>
-    <!-- my func -->
-    <script src="../js/csvUtil.js"></script>
+  <meta charset="UTF-8" />
+  <title>mogejonga - Stats</title>
+  <link rel="stylesheet" href="../css/layout.css">
+  <style>
+    .loading {
+      padding: 20px;
+      font-size: 1.2em;
+      color: #ccc;
+    }
+    .error {
+      padding: 20px;
+      color: #f88;
+    }
+    .table_stats th, .table_stats td {
+      text-align: right;
+      min-width: 60px;
+    }
+    .table_stats th:first-child, .table_stats td:first-child {
+      text-align: left;
+    }
+    .total-row td {
+      font-weight: bold;
+      border-top: 2px solid #fff;
+    }
+  </style>
 </head>
+<body>
+  <div class="header">
+    <header>
+      <ul class="header-list">
+        <li><a href="../index.html"            class="link-to">Home</a></li>
+        <li><a href="../data/index.html"       class="link-to">Data</a></li>
+        <li><a href="./index.html"             class="link-now">Stats</a></li>
+        <li><a href="../regulation/index.html" class="link-to">Regulation</a></li>
+      </ul>
+    </header>
+  </div>
 
-<body> 
-    <div class="header">
-        <header>
-            <ul class="header-list">
-                <li><a href="../index.html" class="link-to">Home</a></li>
-                <li><a href="../data/index.html" class="link-to">Data</a></li>
-                <li><a href="./index.html" class="link-now">Stats</a></li>
-                <li><a href="../regulation/index.html" class="link-to">Regulation</a></li>
-                </ul>
-        </header>
+  <div class="contents">
+    <h1>Stats</h1>
+    <div id="loading" class="loading">データを読み込み中...</div>
+    <div id="error" class="error" style="display:none;"></div>
+
+    <div id="stats-content" style="display:none;">
+
+      <h2>予選得点</h2>
+      <p style="color:#aaa; font-size:0.85em;">予選・SF(status=Q/SF)のpoint合計。NaN=不参加。</p>
+      <div style="overflow-x:auto;">
+        <table id="tbl-points" class="table_stats"></table>
+      </div>
+
+      <h2 style="margin-top:40px;">着順分布</h2>
+      <p style="color:#aaa; font-size:0.85em;">予選・SFの1〜4位回数と平均着順。</p>
+      <div style="overflow-x:auto;">
+        <table id="tbl-ranks" class="table_stats"></table>
+      </div>
+
     </div>
+  </div>
 
-    <div class="contents">
-        <!-- <div class="select">
-            <div class="select-year">
-                <select onchange="statsEachYear(this.value, '浅野')">
-                    <option value="">Select Year</option>
-                    <option value="2016">2016</option>
-                    <option value="2017">2017</option>
-                    <option value="2018">2018</option>
-                    <option value="2018">2019</option>
-                    <option value="2018">2020</option>
-                    <option value="2018">2021</option>
-                    <option value="2018">202205</option>
-                
-                </select>
-            </div>
-        </div> -->
-        
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-        <h2>
-            優勝
-        </h2>
-        <table id='wins' class="table_stats">
-            <tbody>
-                <tr>
-                    <th></th>
-                    <th>浅野</th>
-                    <th>近藤</th>
-                    <th>長屋</th>
-                    <th>諏訪</th>
-                    <th>枝松</th>
-                    <th>落合</th>
-                    <th>土橋</th>
-                    <th>中山</th>
-                    <th>菊地</th>
-                    <th>仲</th>
-                    <th>藤好</th>
-                    <th>きんつ</th>
-                    <th>三田村</th>
-                    <th>森田</th>
-                </tr>
-                <tr><th>🀙 2016</th><td></td><td></td><td>🀢</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><th>🀚 2017</th><td>🀢</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><th>🀛 2018</th><td></td><td></td><td>🀢</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><th>🀜 2019</th><td></td><td></td><td></td><td></td><td>🀢</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><th>🀝 2020</th><td></td><td>🀢</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><th>🀞 2021</th><td></td><td>🀢</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><th>🀟 202205</th><td></td><td></td><td></td><td></td><td></td><td></td><td>🀢</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><th>🀠 202212</th><td></td><td>🀢</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><th>🀡 2023</th><td></td><td>🀢</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><th>🀐 202406</th><td></td><td></td><td>🀢</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><th>🀑 202312</th><td></td><td></td><td>🀢</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-            </tbody>
-        </table>
+  <script>
+    const firebaseConfig = {
+      apiKey:            "AIzaSyAmCR3LPPTbwaGaZklCyvNpX-1ZrqN9dGg",
+      authDomain:        "mogejonga-site.firebaseapp.com",
+      projectId:         "mogejonga-site",
+      storageBucket:     "mogejonga-site.firebasestorage.app",
+      messagingSenderId: "544731021968",
+      appId:             "1:544731021968:web:548739d70cf3c790c8ce15",
+    };
 
-        <h2>予選得点　</h2>
-        
-        <table id="points" class="table_stats">
-          <thead>
-            <tr style="text-align: right;">
-              <th>year</th>
-              <th>浅野</th>
-              <th>近藤</th>
-              <th>長屋</th>
-              <th>諏訪</th>
-              <th>枝松</th>
-              <th>落合</th>
-              <th>土橋</th>
-              <th>中山</th>
-              <th>菊地</th>
-              <th>仲</th>
-              <th>藤好</th>
-              <th>きんつ</th>
-              <th>三田村</th>
-              <th>森田</th>
-              <th>長山</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th>2016</th>
-              <td>-223.20</td>
-              <td>93.20</td>
-              <td>112.70</td>
-              <td>-13.90</td>
-              <td>68.80</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>-22.30</td>
-              <td>-50.50</td>
-              <td>35.20</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-            </tr>
-            <tr>
-              <th>2017</th>
-              <td>91.60</td>
-              <td>102.80</td>
-              <td>NaN</td>
-              <td>142.60</td>
-              <td>-146.40</td>
-              <td>124.80</td>
-              <td>-107.40</td>
-              <td>NaN</td>
-              <td>-219.30</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>11.30</td>
-            </tr>
-            <tr>
-              <th>2018</th>
-              <td>141.00</td>
-              <td>-201.70</td>
-              <td>262.60</td>
-              <td>104.90</td>
-              <td>23.10</td>
-              <td>-227.60</td>
-              <td>NaN</td>
-              <td>-74.60</td>
-              <td>-27.70</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-            </tr>
-            <tr>
-              <th>2019</th>
-              <td>-54.60</td>
-              <td>-3.60</td>
-              <td>86.90</td>
-              <td>123.60</td>
-              <td>209.70</td>
-              <td>NaN</td>
-              <td>113.70</td>
-              <td>-321.20</td>
-              <td>-154.50</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-            </tr>
-            <tr>
-              <th>2020</th>
-              <td>-45.40</td>
-              <td>120.00</td>
-              <td>-4.80</td>
-              <td>-67.40</td>
-              <td>29.30</td>
-              <td>NaN</td>
-              <td>68.80</td>
-              <td>-102.30</td>
-              <td>1.80</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-            </tr>
-            <tr>
-              <th>2021</th>
-              <td>43.70</td>
-              <td>43.70</td>
-              <td>-121.00</td>
-              <td>-62.00</td>
-              <td>287.40</td>
-              <td>-31.00</td>
-              <td>18.70</td>
-              <td>-28.90</td>
-              <td>-150.60</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-            </tr>
-            <tr>
-              <th>202205</th>
-              <td>-126.00</td>
-              <td>349.00</td>
-              <td>66.00</td>
-              <td>122.80</td>
-              <td>-514.30</td>
-              <td>-165.10</td>
-              <td>157.30</td>
-              <td>22.50</td>
-              <td>87.80</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-            </tr>
-            <tr>
-              <th>202212</th>
-              <td>214.40</td>
-              <td>175.50</td>
-              <td>93.10</td>
-              <td>-279.70</td>
-              <td>-284.20</td>
-              <td>-37.80</td>
-              <td>208.90</td>
-              <td>168.40</td>
-              <td>-258.60</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-            </tr>
-            <tr>
-              <th>2023</th>
-              <td>156.60</td>
-              <td>340.80</td>
-              <td>73.00</td>
-              <td>-171.20</td>
-              <td>-86.80</td>
-              <td>-143.20</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>195.00</td>
-              <td>NaN</td>
-              <td>-364.20</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-            </tr>
-            <tr>
-              <th>202406</th>
-              <td>14.10</td>
-              <td>NaN</td>
-              <td>236.50</td>
-              <td>-199.10</td>
-              <td>319.70</td>
-              <td>66.30</td>
-              <td>-99.60</td>
-              <td>-229.50</td>
-              <td>-108.40</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-            </tr>
-            <tr>
-              <th>202412</th>
-              <td>-35.50</td>
-              <td>148.40</td>
-              <td>44.00</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>-226.50</td>
-              <td>-43.60</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>NaN</td>
-              <td>-79.70</td>
-              <td>226.70</td>
-              <td>152.50</td>
-              <td>-186.30</td>
-              <td>NaN</td>
-            </tr>
-            <tr>
-              <th>Total</th>
-              <td>176.70</td>
-              <td>1168.10</td>
-              <td>849.00</td>
-              <td>-299.40</td>
-              <td>-93.70</td>
-              <td>-640.10</td>
-              <td>316.80</td>
-              <td>-587.90</td>
-              <td>-685.00</td>
-              <td>35.20</td>
-              <td>-443.90</td>
-              <td>226.70</td>
-              <td>152.50</td>
-              <td>-186.30</td>
-              <td>11.30</td>
-            </tr>
-          </tbody>
-          </table>
+    const YEAR_ORDER = [
+      "2016","2017","2018","2019","2020","2021",
+      "202205","202212","2023","202406","202412",
+    ];
 
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-          <h2>着順分布</h2>
-          
-          <table id="rank" class="table_stats">
-            <thead>
-              <tr style="text-align: right;">
-                <th></th>
-                <th></th>
-                <th>浅野</th>
-                <th>近藤</th>
-                <th>長屋</th>
-                <th>諏訪</th>
-                <th>枝松</th>
-                <th>落合</th>
-                <th>土橋</th>
-                <th>中山</th>
-                <th>菊地</th>
-                <th>仲</th>
-                <th>藤好</th>
-                <th>きんつ</th>
-                <th>三田村</th>
-                <th>森田</th>
-                <th>長山</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <th>0</th>
-                <td>NaN</td>
-                <td>48</td>
-                <td>48</td>
-                <td>48</td>
-                <td>39</td>
-                <td>42</td>
-                <td>21</td>
-                <td>31</td>
-                <td>25</td>
-                <td>32</td>
-                <td>3</td>
-                <td>6</td>
-                <td>7</td>
-                <td>5</td>
-                <td>1</td>
-                <td>4.00</td>
-              </tr>
-              <tr>
-                <th>1</th>
-                <td>NaN</td>
-                <td>41</td>
-                <td>36</td>
-                <td>43</td>
-                <td>36</td>
-                <td>37</td>
-                <td>37</td>
-                <td>40</td>
-                <td>29</td>
-                <td>36</td>
-                <td>5</td>
-                <td>5</td>
-                <td>2</td>
-                <td>5</td>
-                <td>5</td>
-                <td>3.00</td>
-              </tr>
-              <tr>
-                <th>2</th>
-                <td>NaN</td>
-                <td>33</td>
-                <td>43</td>
-                <td>38</td>
-                <td>41</td>
-                <td>35</td>
-                <td>39</td>
-                <td>23</td>
-                <td>35</td>
-                <td>46</td>
-                <td>2</td>
-                <td>8</td>
-                <td>4</td>
-                <td>4</td>
-                <td>6</td>
-                <td>3.00</td>
-              </tr>
-              <tr>
-                <th>3</th>
-                <td>NaN</td>
-                <td>50</td>
-                <td>29</td>
-                <td>29</td>
-                <td>40</td>
-                <td>42</td>
-                <td>29</td>
-                <td>32</td>
-                <td>37</td>
-                <td>42</td>
-                <td>4</td>
-                <td>13</td>
-                <td>3</td>
-                <td>2</td>
-                <td>4</td>
-                <td>4.00</td>
-              </tr>
-              <tr>
-                <th>4</th>
-                <td>NaN</td>
-                <td>2.49</td>
-                <td>2.34</td>
-                <td>2.30</td>
-                <td>2.53</td>
-                <td>2.49</td>
-                <td>2.60</td>
-                <td>2.44</td>
-                <td>2.67</td>
-                <td>2.63</td>
-                <td>2.50</td>
-                <td>2.88</td>
-                <td>2.19</td>
-                <td>2.19</td>
-                <td>2.81</td>
-                <td>2.50</td>
-              </tr>
-            </tbody>
-          </table>
+    async function main() {
+      try {
+        const snapshot = await db.collection("gameResult")
+          .where("status", "in", ["Q", "SF"])
+          .get();
 
-          <h2>同卓時得点</h2>
-          <table id="point-in-face" class="table_stats">
-            <thead>
-              <tr style="text-align: right;">
-                <th></th>
-                <th>浅野</th>
-                <th>近藤</th>
-                <th>長屋</th>
-                <th>諏訪</th>
-                <th>枝松</th>
-                <th>落合</th>
-                <th>土橋</th>
-                <th>中山</th>
-                <th>菊地</th>
-                <th>仲</th>
-                <th>長山</th>
-                <th>藤好</th>
-                <th>きんつ</th>
-                <th>三田村</th>
-                <th>森田</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <th>浅野</th>
-                <td>0.0</td>
-                <td>-426.1</td>
-                <td>436.9</td>
-                <td>-223.3</td>
-                <td>155.3</td>
-                <td>-3.4</td>
-                <td>208.2</td>
-                <td>42.8</td>
-                <td>460.8</td>
-                <td>55.8</td>
-                <td>21.1</td>
-                <td>4.9</td>
-                <td>-59.7</td>
-                <td>-116.7</td>
-                <td>-26.5</td>
-              </tr>
-              <tr>
-                <th>近藤</th>
-                <td>353.6</td>
-                <td>0.0</td>
-                <td>11.4</td>
-                <td>653.1</td>
-                <td>692.4</td>
-                <td>191.2</td>
-                <td>183.0</td>
-                <td>552.5</td>
-                <td>331.4</td>
-                <td>39.5</td>
-                <td>40.6</td>
-                <td>415.0</td>
-                <td>22.1</td>
-                <td>121.8</td>
-                <td>-103.3</td>
-              </tr>
-              <tr>
-                <th>長屋</th>
-                <td>639.3</td>
-                <td>211.2</td>
-                <td>0.0</td>
-                <td>826.0</td>
-                <td>127.2</td>
-                <td>510.7</td>
-                <td>-116.7</td>
-                <td>146.0</td>
-                <td>264.7</td>
-                <td>-60.0</td>
-                <td>0.0</td>
-                <td>-226.8</td>
-                <td>-5.2</td>
-                <td>114.2</td>
-                <td>116.4</td>
-              </tr>
-              <tr>
-                <th>諏訪</th>
-                <td>139.9</td>
-                <td>106.1</td>
-                <td>-771.9</td>
-                <td>0.0</td>
-                <td>-370.3</td>
-                <td>148.9</td>
-                <td>32.7</td>
-                <td>16.8</td>
-                <td>-137.6</td>
-                <td>-80.8</td>
-                <td>-61.1</td>
-                <td>79.1</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>0.0</td>
-              </tr>
-              <tr>
-                <th>枝松</th>
-                <td>-478.3</td>
-                <td>-78.5</td>
-                <td>-310.5</td>
-                <td>128.7</td>
-                <td>0.0</td>
-                <td>115.2</td>
-                <td>243.1</td>
-                <td>-120.1</td>
-                <td>155.0</td>
-                <td>40.5</td>
-                <td>17.7</td>
-                <td>6.1</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>0.0</td>
-              </tr>
-              <tr>
-                <th>落合</th>
-                <td>-260.6</td>
-                <td>-125.4</td>
-                <td>-88.9</td>
-                <td>-476.7</td>
-                <td>-465.2</td>
-                <td>0.0</td>
-                <td>-319.7</td>
-                <td>7.9</td>
-                <td>36.0</td>
-                <td>0.0</td>
-                <td>96.1</td>
-                <td>5.6</td>
-                <td>-130.1</td>
-                <td>-96.9</td>
-                <td>-102.4</td>
-              </tr>
-              <tr>
-                <th>土橋</th>
-                <td>-248.3</td>
-                <td>-38.1</td>
-                <td>476.3</td>
-                <td>164.5</td>
-                <td>11.4</td>
-                <td>267.0</td>
-                <td>0.0</td>
-                <td>154.0</td>
-                <td>236.3</td>
-                <td>0.0</td>
-                <td>-3.5</td>
-                <td>4.6</td>
-                <td>-20.2</td>
-                <td>-143.9</td>
-                <td>90.3</td>
-              </tr>
-              <tr>
-                <th>中山</th>
-                <td>-109.9</td>
-                <td>-35.7</td>
-                <td>-386.2</td>
-                <td>-653.0</td>
-                <td>144.4</td>
-                <td>-29.6</td>
-                <td>-335.1</td>
-                <td>0.0</td>
-                <td>-427.7</td>
-                <td>69.1</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>0.0</td>
-              </tr>
-              <tr>
-                <th>菊地</th>
-                <td>-219.6</td>
-                <td>-440.0</td>
-                <td>-239.8</td>
-                <td>-153.4</td>
-                <td>-187.2</td>
-                <td>-216.3</td>
-                <td>-378.8</td>
-                <td>-117.8</td>
-                <td>0.0</td>
-                <td>-99.3</td>
-                <td>-122.2</td>
-                <td>119.4</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>0.0</td>
-              </tr>
-              <tr>
-                <th>仲</th>
-                <td>-82.9</td>
-                <td>113.2</td>
-                <td>-72.7</td>
-                <td>-49.6</td>
-                <td>17.1</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>41.6</td>
-                <td>138.9</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>0.0</td>
-              </tr>
-              <tr>
-                <th>長山</th>
-                <td>-159.4</td>
-                <td>-26.3</td>
-                <td>0.0</td>
-                <td>95.0</td>
-                <td>12.1</td>
-                <td>-33.9</td>
-                <td>161.4</td>
-                <td>0.0</td>
-                <td>-15.0</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>0.0</td>
-              </tr>
-              <tr>
-                <th>藤好</th>
-                <td>-79.6</td>
-                <td>-257.5</td>
-                <td>-77.5</td>
-                <td>-182.9</td>
-                <td>-197.3</td>
-                <td>-122.4</td>
-                <td>-176.0</td>
-                <td>0.0</td>
-                <td>-222.0</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>30.5</td>
-                <td>-127.9</td>
-                <td>80.9</td>
-              </tr>
-              <tr>
-                <th>きんつ</th>
-                <td>258.0</td>
-                <td>105.1</td>
-                <td>-54.5</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>60.1</td>
-                <td>58.3</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>80.8</td>
-                <td>0.0</td>
-                <td>92.7</td>
-                <td>79.6</td>
-              </tr>
-              <tr>
-                <th>三田村</th>
-                <td>-2.6</td>
-                <td>38.7</td>
-                <td>84.4</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>-46.6</td>
-                <td>112.8</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>95.8</td>
-                <td>123.7</td>
-                <td>0.0</td>
-                <td>51.3</td>
-              </tr>
-              <tr>
-                <th>森田</th>
-                <td>-10.5</td>
-                <td>-147.2</td>
-                <td>8.2</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>-69.8</td>
-                <td>-15.4</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>0.0</td>
-                <td>-140.6</td>
-                <td>-187.8</td>
-                <td>4.2</td>
-                <td>0.0</td>
-              </tr>
-            </tbody>
-          </table>
+        const records = snapshot.docs.map(d => d.data());
 
-          <h2>同卓時平均着順</h2>
-          <table id="average-in-face" class="table_stats">
-            <thead>
-              <tr style="text-align: right;">
-                <th></th>
-                <th>浅野</th>
-                <th>近藤</th>
-                <th>長屋</th>
-                <th>諏訪</th>
-                <th>枝松</th>
-                <th>落合</th>
-                <th>土橋</th>
-                <th>中山</th>
-                <th>菊地</th>
-                <th>仲</th>
-                <th>長山</th>
-                <th>藤好</th>
-                <th>きんつ</th>
-                <th>三田村</th>
-                <th>森田</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <th>浅野</th>
-                <td>NaN</td>
-                <td>2.73</td>
-                <td>2.34</td>
-                <td>2.59</td>
-                <td>2.40</td>
-                <td>2.50</td>
-                <td>2.43</td>
-                <td>2.51</td>
-                <td>2.34</td>
-                <td>2.00</td>
-                <td>2.50</td>
-                <td>2.58</td>
-                <td>3.00</td>
-                <td>3.17</td>
-                <td>2.83</td>
-              </tr>
-              <tr>
-                <th>近藤</th>
-                <td>2.37</td>
-                <td>NaN</td>
-                <td>2.52</td>
-                <td>2.18</td>
-                <td>2.30</td>
-                <td>2.39</td>
-                <td>2.41</td>
-                <td>2.17</td>
-                <td>2.43</td>
-                <td>2.33</td>
-                <td>2.33</td>
-                <td>1.93</td>
-                <td>2.33</td>
-                <td>2.33</td>
-                <td>2.83</td>
-              </tr>
-              <tr>
-                <th>長屋</th>
-                <td>2.18</td>
-                <td>2.39</td>
-                <td>NaN</td>
-                <td>2.13</td>
-                <td>2.34</td>
-                <td>2.17</td>
-                <td>2.52</td>
-                <td>2.40</td>
-                <td>2.29</td>
-                <td>2.67</td>
-                <td>NaN</td>
-                <td>2.83</td>
-                <td>2.33</td>
-                <td>1.83</td>
-                <td>2.00</td>
-              </tr>
-              <tr>
-                <th>諏訪</th>
-                <td>2.39</td>
-                <td>2.45</td>
-                <td>2.78</td>
-                <td>NaN</td>
-                <td>2.59</td>
-                <td>2.43</td>
-                <td>2.45</td>
-                <td>2.49</td>
-                <td>2.52</td>
-                <td>3.00</td>
-                <td>2.83</td>
-                <td>2.00</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>NaN</td>
-              </tr>
-              <tr>
-                <th>枝松</th>
-                <td>2.69</td>
-                <td>2.46</td>
-                <td>2.62</td>
-                <td>2.42</td>
-                <td>NaN</td>
-                <td>2.43</td>
-                <td>2.33</td>
-                <td>2.52</td>
-                <td>2.45</td>
-                <td>2.33</td>
-                <td>2.33</td>
-                <td>2.33</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>NaN</td>
-              </tr>
-              <tr>
-                <th>落合</th>
-                <td>2.56</td>
-                <td>2.57</td>
-                <td>2.55</td>
-                <td>2.81</td>
-                <td>2.79</td>
-                <td>NaN</td>
-                <td>2.67</td>
-                <td>2.50</td>
-                <td>2.48</td>
-                <td>NaN</td>
-                <td>2.00</td>
-                <td>2.43</td>
-                <td>2.83</td>
-                <td>2.67</td>
-                <td>2.83</td>
-              </tr>
-              <tr>
-                <th>土橋</th>
-                <td>2.69</td>
-                <td>2.48</td>
-                <td>2.28</td>
-                <td>2.43</td>
-                <td>2.59</td>
-                <td>2.28</td>
-                <td>NaN</td>
-                <td>2.32</td>
-                <td>2.33</td>
-                <td>NaN</td>
-                <td>2.33</td>
-                <td>2.50</td>
-                <td>2.67</td>
-                <td>3.17</td>
-                <td>2.17</td>
-              </tr>
-              <tr>
-                <th>中山</th>
-                <td>2.57</td>
-                <td>2.58</td>
-                <td>2.69</td>
-                <td>2.90</td>
-                <td>2.46</td>
-                <td>2.68</td>
-                <td>2.79</td>
-                <td>NaN</td>
-                <td>2.76</td>
-                <td>2.17</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>NaN</td>
-              </tr>
-              <tr>
-                <th>菊地</th>
-                <td>2.58</td>
-                <td>2.72</td>
-                <td>2.66</td>
-                <td>2.56</td>
-                <td>2.53</td>
-                <td>2.62</td>
-                <td>2.76</td>
-                <td>2.61</td>
-                <td>NaN</td>
-                <td>3.00</td>
-                <td>3.17</td>
-                <td>2.12</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>NaN</td>
-              </tr>
-              <tr>
-                <th>仲</th>
-                <td>3.00</td>
-                <td>1.83</td>
-                <td>3.00</td>
-                <td>2.83</td>
-                <td>2.50</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>2.50</td>
-                <td>1.83</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>NaN</td>
-              </tr>
-              <tr>
-                <th>長山</th>
-                <td>3.33</td>
-                <td>2.50</td>
-                <td>NaN</td>
-                <td>2.00</td>
-                <td>2.67</td>
-                <td>2.67</td>
-                <td>1.83</td>
-                <td>NaN</td>
-                <td>2.50</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>NaN</td>
-              </tr>
-              <tr>
-                <th>藤好</th>
-                <td>2.67</td>
-                <td>2.93</td>
-                <td>2.67</td>
-                <td>3.33</td>
-                <td>3.33</td>
-                <td>2.79</td>
-                <td>3.33</td>
-                <td>NaN</td>
-                <td>3.25</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>2.33</td>
-                <td>3.17</td>
-                <td>2.17</td>
-              </tr>
-              <tr>
-                <th>きんつ</th>
-                <td>1.50</td>
-                <td>2.17</td>
-                <td>2.83</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>2.33</td>
-                <td>2.17</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>2.33</td>
-                <td>NaN</td>
-                <td>2.00</td>
-                <td>2.17</td>
-              </tr>
-              <tr>
-                <th>三田村</th>
-                <td>2.33</td>
-                <td>2.17</td>
-                <td>2.17</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>2.83</td>
-                <td>1.83</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>2.00</td>
-                <td>2.00</td>
-                <td>NaN</td>
-                <td>2.17</td>
-              </tr>
-              <tr>
-                <th>森田</th>
-                <td>2.50</td>
-                <td>3.17</td>
-                <td>2.50</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>2.83</td>
-                <td>2.67</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>NaN</td>
-                <td>3.00</td>
-                <td>3.33</td>
-                <td>2.50</td>
-                <td>NaN</td>
-              </tr>
-            </tbody>
-          </table>
-    </div>
-    
+        if (records.length === 0) {
+          showError("Firestoreにデータがありません。addCSV.js でインポートしてください。");
+          return;
+        }
 
+        const playerGameCount = {};
+        for (const r of records) {
+          playerGameCount[r.name] = (playerGameCount[r.name] || 0) + 1;
+        }
+        const players = Object.keys(playerGameCount)
+          .sort((a, b) => playerGameCount[b] - playerGameCount[a]);
 
+        const yearsInData = new Set(records.map(r => r.year));
+        const years = YEAR_ORDER.filter(y => yearsInData.has(y));
 
+        buildPointsTable(records, years, players);
+        buildRanksTable(records, players);
 
-      
-    
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("stats-content").style.display = "block";
+
+      } catch (err) {
+        showError("Firestore取得エラー: " + err.message);
+      }
+    }
+
+    function buildPointsTable(records, years, players) {
+      const pointMap = {};
+      for (const r of records) {
+        if (!pointMap[r.year]) pointMap[r.year] = {};
+        pointMap[r.year][r.name] = ((pointMap[r.year][r.name] || 0) + r.point);
+      }
+
+      const table = document.getElementById("tbl-points");
+      const thead = table.createTHead();
+      const hrow = thead.insertRow();
+      th(hrow, "year");
+      for (const p of players) th(hrow, p);
+
+      const tbody = table.createTBody();
+      const playerTotal = {};
+      for (const year of years) {
+        const row = tbody.insertRow();
+        td(row, year, true);
+        for (const p of players) {
+          const val = pointMap[year]?.[p];
+          td(row, val !== undefined ? val.toFixed(1) : "NaN");
+          if (val !== undefined) {
+            playerTotal[p] = (playerTotal[p] || 0) + val;
+          }
+        }
+      }
+
+      const totalRow = tbody.insertRow();
+      totalRow.classList.add("total-row");
+      td(totalRow, "Total", true);
+      for (const p of players) {
+        const v = playerTotal[p];
+        td(totalRow, v !== undefined ? v.toFixed(1) : "NaN");
+      }
+    }
+
+    function buildRanksTable(records, players) {
+      const rankMap = {};
+      for (const r of records) {
+        if (!rankMap[r.name]) rankMap[r.name] = { 1:0, 2:0, 3:0, 4:0, sum:0, count:0 };
+        const ri = Math.round(r.rank);
+        if (ri >= 1 && ri <= 4) {
+          rankMap[r.name][ri]++;
+          rankMap[r.name].sum += ri;
+          rankMap[r.name].count++;
+        }
+      }
+
+      const table = document.getElementById("tbl-ranks");
+      const thead = table.createTHead();
+      const hrow = thead.insertRow();
+      th(hrow, "");
+      th(hrow, "対局数");
+      th(hrow, "1位");
+      th(hrow, "2位");
+      th(hrow, "3位");
+      th(hrow, "4位");
+      th(hrow, "平均着順");
+
+      const tbody = table.createTBody();
+      for (const p of players) {
+        const d = rankMap[p] || { 1:0, 2:0, 3:0, 4:0, sum:0, count:0 };
+        const avg = d.count > 0 ? (d.sum / d.count).toFixed(2) : "NaN";
+        const row = tbody.insertRow();
+        td(row, p, true);
+        td(row, d.count);
+        td(row, d[1]);
+        td(row, d[2]);
+        td(row, d[3]);
+        td(row, d[4]);
+        td(row, avg);
+      }
+    }
+
+    function th(row, text) {
+      const cell = document.createElement("th");
+      cell.textContent = text;
+      row.appendChild(cell);
+    }
+    function td(row, text, isHeader = false) {
+      const cell = document.createElement(isHeader ? "th" : "td");
+      cell.textContent = text;
+      row.appendChild(cell);
+    }
+    function showError(msg) {
+      document.getElementById("loading").style.display = "none";
+      const el = document.getElementById("error");
+      el.textContent = msg;
+      el.style.display = "block";
+    }
+
+    main();
+  </script>
 </body>
-
-
-
+</html>

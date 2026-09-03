@@ -1,60 +1,99 @@
-// adminの初期化
-var admin = require("firebase-admin");
- 
-var serviceAccount = require(
-    "/Users/asn_ryu/Dropbox/app/mogejonga-site/db/mogejonga-site-firebase-adminsdk.json");
- 
+const admin = require("firebase-admin");
+const fs = require("fs");
+const path = require("path");
+const { parse } = require("csv-parse/sync");
+
+// サービスアカウントキーを db/firestore/ に置いてください
+const serviceAccount = require("./mogejonga-site-firebase-adminsdk.json");
+
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://mogejonga-site.firebaseio.com"
 });
 
-// csv import
 const db = admin.firestore();
 
-const fs = require('fs');
-const file = 'csv/data2016.csv'; //インポートしたいcsvファイルをindex.jsと同じ階層に入れてください
-let data = fs.readFileSync(file, 'utf-8'); //csvファイルの読み込み
-console.log(data);
+const YEARS = [
+  "2016", "2017", "2018", "2019", "2020", "2021",
+  "202205", "202212", "2023", "202406", "202412",
+];
 
+async function clearCollection() {
+  process.stdout.write("Clearing gameResult collection...");
+  const snapshot = await db.collection("gameResult").get();
+  if (snapshot.empty) {
+    console.log(" (empty, skip)");
+    return;
+  }
 
-// const csvsync = require('csv-partouse/sync');
-const { parse } = require('csv-parse/sync');
-const parse_data = parse(data); //parse csv
-let objects = [] //この配列の中にパースしたcsvの中身をkey-value形式で入れていく。
- 
-console.log(parse_data);
-parse_data.forEach(function(response) {
-  objects.push({
-    year:  response[0],
-    game:  response[1],
-    group: response[2],
-    type:  response[3],
-    name:  response[4],
-    point: response[5]
-  })
-  db.collection("gameResult")
-  .add({ 
-    year:  response[0],
-    game:  parseInt(response[1], 10),
-    group: response[2],
-    type:  response[3],
-    name:  response[4],
-    point: parseFloat(response[5])})
-  .then((ref) => {
-    // 成功時の処理
-  })
-  .catch((error) => {
-    // エラー時の処理
-  });
-}, this)
+  let batch = db.batch();
+  let count = 0;
+  for (const doc of snapshot.docs) {
+    batch.delete(doc.ref);
+    count++;
+    if (count === 500) {
+      await batch.commit();
+      batch = db.batch();
+      count = 0;
+    }
+  }
+  if (count > 0) await batch.commit();
+  console.log(` deleted ${snapshot.size} docs.`);
+}
 
-console.log(objects)
+async function importYear(year) {
+  const filePath = path.join(__dirname, `../csv/data${year}_processed.csv`);
+  if (!fs.existsSync(filePath)) {
+    console.warn(`  [skip] ${filePath} not found`);
+    return 0;
+  }
 
+  const raw = fs.readFileSync(filePath, "utf-8");
+  const records = parse(raw, { columns: true, skip_empty_lines: true });
 
+  let batch = db.batch();
+  let batchCount = 0;
+  let total = 0;
 
-//batchインスタンス生成
-let batch = db.batch();
+  for (const row of records) {
+    const ref = db.collection("gameResult").doc();
+    batch.set(ref, {
+      year:   String(row.year),
+      game:   parseInt(row.game, 10),
+      groups: row.groups,
+      status: row.status,
+      name:   row.name,
+      point:  parseFloat(row.point),
+      rank:   parseFloat(row.rank),
+    });
+    batchCount++;
+    total++;
 
+    if (batchCount === 500) {
+      await batch.commit();
+      batch = db.batch();
+      batchCount = 0;
+    }
+  }
+  if (batchCount > 0) await batch.commit();
+  return total;
+}
 
+async function main() {
+  await clearCollection();
 
+  let grandTotal = 0;
+  for (const year of YEARS) {
+    process.stdout.write(`Importing ${year}... `);
+    const count = await importYear(year);
+    console.log(`${count} records`);
+    grandTotal += count;
+  }
+
+  console.log(`\nDone. Total: ${grandTotal} records imported.`);
+  process.exit(0);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
