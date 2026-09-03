@@ -5,50 +5,87 @@
   <title>mogejonga - Data</title>
   <link rel="stylesheet" href="../css/layout.css">
   <style>
-    /* ===== ゲームカード ===== */
-    .games-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
     /*
-      6列グリッド:
-        col1: Game No + Status (全6行をspan)
-        col2: 卓名 (A卓 / B卓)
-        col3-6: プレイヤー列 (1位〜4位)
+      9列グリッド共通定義
+      col1: Game情報 / col2-5: A卓 / col6-9: B卓
     */
-    .game-card {
+    .grid-9 {
       display: grid;
-      grid-template-columns: 72px 48px repeat(4, 1fr);
-      background: rgba(0, 0, 0, 0.45);
-      border-radius: 8px;
-      overflow: hidden;
+      grid-template-columns: 72px repeat(4, 1fr) repeat(4, 1fr);
     }
 
-    /* ゲーム情報セル: 全6行span */
+    /* ===== 固定ヘッダー ===== */
+    .results-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(10, 30, 10, 0.97);
+      border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+      margin-bottom: 6px;
+      border-radius: 6px 6px 0 0;
+    }
+
+    .hdr-empty {
+      /* Game列の空セル */
+    }
+
+    .hdr-tbl {
+      text-align: center;
+      font-weight: bold;
+      font-size: 0.82em;
+      letter-spacing: 3px;
+      padding: 6px 4px 3px;
+      color: #ddd;
+    }
+    .hdr-tbl.a {
+      grid-column: span 4;
+      border-right: 1px solid rgba(255, 255, 255, 0.18);
+    }
+    .hdr-tbl.b {
+      grid-column: span 4;
+    }
+
+    .hdr-rank {
+      text-align: center;
+      font-size: 0.75em;
+      font-weight: bold;
+      padding: 2px 4px 7px;
+    }
+    .hdr-rank.a4 {
+      border-right: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    /* ===== ゲームカード ===== */
+    .game-card {
+      background: rgba(0, 0, 0, 0.38);
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 4px;
+    }
+
+    /* Game情報セル: 2行span */
     .game-info {
       grid-column: 1;
-      grid-row: 1 / span 6;
+      grid-row: 1 / span 2;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      padding: 8px 4px;
+      gap: 5px;
+      padding: 6px 4px;
       border-right: 1px solid rgba(255, 255, 255, 0.15);
       text-align: center;
     }
 
     .game-num {
       font-weight: bold;
-      font-size: 0.9em;
-      line-height: 1.3;
+      font-size: 0.85em;
+      line-height: 1.4;
     }
 
     .status-badge {
-      font-size: 0.68em;
-      padding: 2px 7px;
+      font-size: 0.65em;
+      padding: 2px 6px;
       border-radius: 4px;
       background: rgba(255, 255, 255, 0.15);
       letter-spacing: 1px;
@@ -56,61 +93,35 @@
     .status-badge.sf { background: rgba(100, 160, 255, 0.3); }
     .status-badge.f  { background: rgba(255, 200, 50,  0.3); }
 
-    /* ===== 各セル共通 ===== */
-    .cell {
-      padding: 5px 6px;
+    /* プレイヤー名 */
+    .pname {
       text-align: center;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      font-size: 0.9em;
+      padding: 7px 4px 2px;
     }
 
-    /* B卓の先頭行に区切り線 */
-    .b-sep {
-      border-top: 1px solid rgba(255, 255, 255, 0.12);
+    /* ポイント */
+    .pt {
+      text-align: center;
+      font-family: monospace;
+      font-size: 0.82em;
+      padding: 2px 4px 7px;
     }
+    .pos  { color: #7fc97f; }
+    .neg  { color: #f88070; }
+    .zero { color: #aaa; }
 
-    /* 卓名セル */
-    .tbl-name {
-      font-size: 0.8em;
-      font-weight: bold;
-      color: #aaa;
-      letter-spacing: 2px;
-      border-right: 1px solid rgba(255, 255, 255, 0.1);
-      /* 卓名は3行分の高さを持つ (header + names + points) */
-      grid-row: span 3;
-      writing-mode: horizontal-tb;
-    }
+    /* A卓とB卓の境界線 */
+    .a4 { border-right: 1px solid rgba(255, 255, 255, 0.15); }
 
-    /* 着順ヘッダー */
-    .rank-hdr {
-      font-size: 0.75em;
-      font-weight: bold;
-      padding-bottom: 4px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    }
+    /* 着順色 */
     .rank-1 { color: #ffd700; }
     .rank-2 { color: #c0c0c0; }
     .rank-3 { color: #cd7f32; }
     .rank-4 { color: #777; }
 
-    /* プレイヤー名 */
-    .pname {
-      font-size: 0.95em;
-    }
-
-    /* ポイント */
-    .pt {
-      font-family: monospace;
-      font-size: 0.85em;
-      padding-top: 2px;
-    }
-    .pos  { color: #7fc97f; }
-    .neg  { color: #f88070; }
-    .zero { color: #ccc; }
-
-    /* ===== その他 ===== */
-    .year-selector { margin-bottom: 20px; }
+    /* その他 */
+    .year-selector { margin-bottom: 16px; }
     .placeholder   { text-align: center; color: #888; padding: 48px 0; }
     .loading-msg   { color: #aaa; padding: 10px 0; }
     .error-msg     { color: #f88; padding: 10px 0; }
@@ -148,6 +159,25 @@
 
     <div id="loading" class="loading-msg" style="display:none;">読み込み中...</div>
     <div id="error"   class="error-msg"   style="display:none;"></div>
+
+    <!-- 着順ヘッダー（年選択後に表示） -->
+    <div id="results-header" class="results-header grid-9" style="display:none;">
+      <!-- 行1: 卓名ラベル -->
+      <div class="hdr-empty"></div>
+      <div class="hdr-tbl a">A 卓</div>
+      <div class="hdr-tbl b">B 卓</div>
+      <!-- 行2: 着順ラベル -->
+      <div class="hdr-empty"></div>
+      <div class="hdr-rank rank-1">1位</div>
+      <div class="hdr-rank rank-2">2位</div>
+      <div class="hdr-rank rank-3">3位</div>
+      <div class="hdr-rank rank-4 a4">4位</div>
+      <div class="hdr-rank rank-1">1位</div>
+      <div class="hdr-rank rank-2">2位</div>
+      <div class="hdr-rank rank-3">3位</div>
+      <div class="hdr-rank rank-4">4位</div>
+    </div>
+
     <div id="container">
       <div class="placeholder">年を選択してください</div>
     </div>
@@ -168,11 +198,14 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // ===== データ取得 =====
     async function loadYear(year) {
-      const container = document.getElementById("container");
-      const loading   = document.getElementById("loading");
-      const errorEl   = document.getElementById("error");
+      const container  = document.getElementById("container");
+      const header     = document.getElementById("results-header");
+      const loading    = document.getElementById("loading");
+      const errorEl    = document.getElementById("error");
+
+      header.style.display = "none";
+      container.innerHTML  = "";
 
       if (!year) {
         container.innerHTML = '<div class="placeholder">年を選択してください</div>';
@@ -181,7 +214,6 @@
 
       loading.style.display = "block";
       errorEl.style.display = "none";
-      container.innerHTML = "";
 
       try {
         const snapshot = await db.collection("gameResult")
@@ -197,17 +229,20 @@
           (r.groups === "A" ? games[r.game].A : games[r.game].B).push(r);
         }
 
-        // ゲームNo昇順、各卓は着順でソート
+        // ゲームNo昇順・各卓は着順でソート
         const gameNums = Object.keys(games).map(Number).sort((a, b) => a - b);
         for (const n of gameNums) {
           games[n].A.sort((a, b) => a.rank - b.rank);
           games[n].B.sort((a, b) => a.rank - b.rank);
         }
 
-        const grid = document.createElement("div");
-        grid.className = "games-grid";
-        for (const n of gameNums) grid.appendChild(buildCard(n, games[n]));
-        container.appendChild(grid);
+        // ヘッダー表示
+        header.style.display = "grid";
+
+        // ゲームカード生成
+        const frag = document.createDocumentFragment();
+        for (const n of gameNums) frag.appendChild(buildCard(n, games[n]));
+        container.appendChild(frag);
 
       } catch (err) {
         errorEl.textContent = "エラー: " + err.message;
@@ -217,12 +252,11 @@
       }
     }
 
-    // ===== カード生成 =====
     function buildCard(gameNo, g) {
       const card = document.createElement("div");
-      card.className = "game-card";
+      card.className = "game-card grid-9";
 
-      // col1: Game No + Status (6行span はCSSで指定済み)
+      // col1: Game情報（2行span）
       const statusKey = { SF: "sf", F: "f" }[g.status] || "";
       const info = document.createElement("div");
       info.className = "game-info";
@@ -232,50 +266,45 @@
       `;
       card.appendChild(info);
 
-      // A卓・B卓の各行を追加
-      appendTableRows(card, "A卓", g.A, false);
-      appendTableRows(card, "B卓", g.B, true);
+      // 行1: 名前（A卓4列 → B卓4列）
+      appendPlayerCells(card, g.A, g.B, "pname");
+
+      // 行2: ポイント（A卓4列 → B卓4列）
+      appendPlayerCells(card, g.A, g.B, "pt");
 
       return card;
     }
 
-    const RANK_LABELS = ["", "1位", "2位", "3位", "4位"];
+    function appendPlayerCells(card, aPlayers, bPlayers, type) {
+      const isName = type === "pname";
 
-    function appendTableRows(card, label, players, isBTable) {
-      const sep = isBTable ? " b-sep" : "";
-
-      // --- 行1: 卓名 (3行span) + 着順ヘッダー ---
-      const tblNameEl = document.createElement("div");
-      tblNameEl.className = `cell tbl-name${sep}`;
-      tblNameEl.textContent = label;
-      card.appendChild(tblNameEl);
-
-      for (let r = 1; r <= 4; r++) {
-        const el = document.createElement("div");
-        el.className = `cell rank-hdr rank-${r}${sep}`;
-        el.textContent = RANK_LABELS[r];
-        card.appendChild(el);
-      }
-
-      // --- 行2: プレイヤー名 ---
       for (let i = 0; i < 4; i++) {
-        const el = document.createElement("div");
-        el.className = "cell pname";
-        el.textContent = players[i]?.name ?? "—";
-        card.appendChild(el);
-      }
+        const el  = document.createElement("div");
+        const p   = aPlayers[i];
+        const a4  = i === 3 ? " a4" : "";
 
-      // --- 行3: ポイント ---
-      for (let i = 0; i < 4; i++) {
-        const el = document.createElement("div");
-        if (players[i]) {
-          const pt = players[i].point;
-          const cls = pt > 0 ? "pos" : pt < 0 ? "neg" : "zero";
-          el.className = `cell pt ${cls}`;
-          el.textContent = (pt > 0 ? "+" : "") + pt.toFixed(1);
+        if (isName) {
+          el.className = `pname${a4}`;
+          el.textContent = p?.name ?? "—";
         } else {
-          el.className = "cell pt zero";
-          el.textContent = "—";
+          const cls = !p ? "zero" : p.point > 0 ? "pos" : p.point < 0 ? "neg" : "zero";
+          el.className = `pt ${cls}${a4}`;
+          el.textContent = p ? (p.point > 0 ? "+" : "") + p.point.toFixed(1) : "—";
+        }
+        card.appendChild(el);
+      }
+
+      for (let i = 0; i < 4; i++) {
+        const el = document.createElement("div");
+        const p  = bPlayers[i];
+
+        if (isName) {
+          el.className = "pname";
+          el.textContent = p?.name ?? "—";
+        } else {
+          const cls = !p ? "zero" : p.point > 0 ? "pos" : p.point < 0 ? "neg" : "zero";
+          el.className = `pt ${cls}`;
+          el.textContent = p ? (p.point > 0 ? "+" : "") + p.point.toFixed(1) : "—";
         }
         card.appendChild(el);
       }
