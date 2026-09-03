@@ -111,6 +111,22 @@
     .placeholder   { text-align: center; color: #888; padding: 48px 0; }
     .loading-msg   { color: #aaa; padding: 10px 0; }
     .error-msg     { color: #f88; padding: 10px 0; }
+
+    .data-layout {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+    .game-list-col {
+      flex: 1;
+      min-width: 0;
+    }
+    #chart-section {
+      width: 360px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 8px;
+    }
   </style>
 </head>
 <body>
@@ -146,32 +162,35 @@
     <div id="loading" class="loading-msg" style="display:none;">読み込み中...</div>
     <div id="error"   class="error-msg"   style="display:none;"></div>
 
-    <div id="results-header" class="results-header grid-9" style="display:none;">
-      <div class="hdr-empty"></div>
-      <div class="hdr-tbl a">A 卓</div>
-      <div class="hdr-tbl b">B 卓</div>
-      <div class="hdr-empty"></div>
-      <div class="hdr-rank rank-1">1位</div>
-      <div class="hdr-rank rank-2">2位</div>
-      <div class="hdr-rank rank-3">3位</div>
-      <div class="hdr-rank rank-4 a4">4位</div>
-      <div class="hdr-rank rank-1">1位</div>
-      <div class="hdr-rank rank-2">2位</div>
-      <div class="hdr-rank rank-3">3位</div>
-      <div class="hdr-rank rank-4">4位</div>
-    </div>
-
-    <div id="container">
-      <div class="placeholder">年を選択してください</div>
-    </div>
-
-    <div id="chart-section" style="display:none; margin-top:32px;">
-      <div style="position:relative; height:380px;">
-        <canvas id="chart-qsf"></canvas>
+    <div class="data-layout">
+      <div class="game-list-col">
+        <div id="results-header" class="results-header grid-9" style="display:none;">
+          <div class="hdr-empty"></div>
+          <div class="hdr-tbl a">A 卓</div>
+          <div class="hdr-tbl b">B 卓</div>
+          <div class="hdr-empty"></div>
+          <div class="hdr-rank rank-1">1位</div>
+          <div class="hdr-rank rank-2">2位</div>
+          <div class="hdr-rank rank-3">3位</div>
+          <div class="hdr-rank rank-4 a4">4位</div>
+          <div class="hdr-rank rank-1">1位</div>
+          <div class="hdr-rank rank-2">2位</div>
+          <div class="hdr-rank rank-3">3位</div>
+          <div class="hdr-rank rank-4">4位</div>
+        </div>
+        <div id="container">
+          <div class="placeholder">年を選択してください</div>
+        </div>
       </div>
-      <div id="chart-f-section" style="display:none;">
-        <div style="position:relative; height:380px; margin-top:40px;">
-          <canvas id="chart-f"></canvas>
+
+      <div id="chart-section" style="display:none;">
+        <div style="position:relative; height:300px;">
+          <canvas id="chart-qsf"></canvas>
+        </div>
+        <div id="chart-f-section" style="display:none;">
+          <div style="position:relative; height:260px; margin-top:24px;">
+            <canvas id="chart-f"></canvas>
+          </div>
         </div>
       </div>
     </div>
@@ -349,9 +368,9 @@
         data,
         borderColor: color,
         backgroundColor: color + "22",
-        tension: 0.3,
-        pointRadius: 4,
-        pointHoverRadius: 6,
+        tension: 0,
+        pointRadius: 0,
+        pointHoverRadius: 4,
         borderWidth: 2,
       };
     }
