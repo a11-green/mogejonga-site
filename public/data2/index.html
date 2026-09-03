@@ -11,7 +11,7 @@
     */
     .grid-9 {
       display: grid;
-      grid-template-columns: 72px repeat(4, 1fr) repeat(4, 1fr);
+      grid-template-columns: 96px repeat(4, 1fr) repeat(4, 1fr);
     }
 
     /* ===== 固定ヘッダー ===== */
@@ -261,7 +261,7 @@
       const info = document.createElement("div");
       info.className = "game-info";
       info.innerHTML = `
-        <span class="game-num">Game<br>${gameNo}</span>
+        <span class="game-num">Game ${gameNo}</span>
         <span class="status-badge ${statusKey}">${g.status}</span>
       `;
       card.appendChild(info);
