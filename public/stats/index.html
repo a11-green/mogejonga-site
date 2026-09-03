@@ -46,14 +46,33 @@
 
     <div id="stats-content" style="display:none;">
 
-      <h2>予選得点</h2>
-      <p style="color:#aaa; font-size:0.85em;">予選・SF(status=Q/SF)のpoint合計。NaN=不参加。</p>
+      <h2>各年の優勝</h2>
+      <p style="color:#aaa; font-size:0.85em;">Q+SF合計上位4名が決勝進出。持越し（Q+SF合計÷2）＋決勝ポイントで最終順位決定。</p>
+      <div style="overflow-x:auto;">
+        <table id="tbl-champions" class="table_stats"></table>
+      </div>
+
+      <div id="status-filter" style="margin-top:36px; margin-bottom:4px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+        <span style="color:#aaa; font-size:0.85em;">集計対象：</span>
+        <label style="color:#ccc; font-size:0.9em; cursor:pointer; display:flex; align-items:center; gap:5px;">
+          <input type="checkbox" id="chk-Q"  checked> 予選 (Q)
+        </label>
+        <label style="color:#ccc; font-size:0.9em; cursor:pointer; display:flex; align-items:center; gap:5px;">
+          <input type="checkbox" id="chk-SF" checked> セミファイナル (SF)
+        </label>
+        <label style="color:#ccc; font-size:0.9em; cursor:pointer; display:flex; align-items:center; gap:5px;">
+          <input type="checkbox" id="chk-F"> 決勝 (F)
+        </label>
+      </div>
+
+      <h2 style="margin-top:20px;">予選得点</h2>
+      <p style="color:#aaa; font-size:0.85em;">選択したステータスのpoint合計。NaN=不参加。</p>
       <div style="overflow-x:auto;">
         <table id="tbl-points" class="table_stats"></table>
       </div>
 
       <h2 style="margin-top:40px;">着順分布</h2>
-      <p style="color:#aaa; font-size:0.85em;">予選・SFの1〜4位回数と平均着順。</p>
+      <p style="color:#aaa; font-size:0.85em;">選択したステータスの1〜4位回数と平均着順（昇順）。</p>
       <div style="overflow-x:auto;">
         <table id="tbl-ranks" class="table_stats"></table>
       </div>
@@ -76,43 +95,159 @@
 
     const YEAR_ORDER = [
       "2016","2017","2018","2019","2020","2021",
-      "202205","202212","2023","202406","202412",
+      "202205","202212","2023","202406","202412","2025",
     ];
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    let _allRecords = [];
+    let _years = [];
+
     async function main() {
       try {
-        const snapshot = await db.collection("gameResult")
-          .where("status", "in", ["Q", "SF"])
-          .get();
+        const snapshot = await db.collection("gameResult").get();
 
-        const records = snapshot.docs.map(d => d.data());
+        _allRecords = snapshot.docs.map(d => d.data());
 
-        if (records.length === 0) {
+        if (_allRecords.length === 0) {
           showError("Firestoreにデータがありません。addCSV.js でインポートしてください。");
           return;
         }
 
-        const playerGameCount = {};
-        for (const r of records) {
-          playerGameCount[r.name] = (playerGameCount[r.name] || 0) + 1;
-        }
-        const players = Object.keys(playerGameCount)
-          .sort((a, b) => playerGameCount[b] - playerGameCount[a]);
+        const yearsInData = new Set(_allRecords.map(r => r.year));
+        _years = YEAR_ORDER.filter(y => yearsInData.has(y));
 
-        const yearsInData = new Set(records.map(r => r.year));
-        const years = YEAR_ORDER.filter(y => yearsInData.has(y));
-
-        buildPointsTable(records, years, players);
-        buildRanksTable(records, players);
+        buildChampionsTable(_allRecords, _years);
+        renderFilteredTables();
 
         document.getElementById("loading").style.display = "none";
         document.getElementById("stats-content").style.display = "block";
 
+        ["chk-Q", "chk-SF", "chk-F"].forEach(id => {
+          document.getElementById(id).addEventListener("change", renderFilteredTables);
+        });
+
       } catch (err) {
         showError("Firestore取得エラー: " + err.message);
+      }
+    }
+
+    function renderFilteredTables() {
+      const statuses = new Set();
+      if (document.getElementById("chk-Q").checked)  statuses.add("Q");
+      if (document.getElementById("chk-SF").checked) statuses.add("SF");
+      if (document.getElementById("chk-F").checked)  statuses.add("F");
+
+      const filtered = _allRecords.filter(r => statuses.has(r.status));
+
+      document.getElementById("tbl-points").innerHTML = "";
+      document.getElementById("tbl-ranks").innerHTML = "";
+
+      if (filtered.length === 0) return;
+
+      const playerGameCount = {};
+      for (const r of filtered) {
+        playerGameCount[r.name] = (playerGameCount[r.name] || 0) + 1;
+      }
+      const players = Object.keys(playerGameCount)
+        .sort((a, b) => playerGameCount[b] - playerGameCount[a]);
+
+      buildPointsTable(filtered, _years, players);
+      buildRanksTable(filtered, players);
+    }
+
+    function computeChampions(allRecords, years) {
+      const qsfMap = {};
+      const fMap   = {};
+
+      for (const r of allRecords) {
+        if (r.status === "Q" || r.status === "SF") {
+          if (!qsfMap[r.year]) qsfMap[r.year] = {};
+          qsfMap[r.year][r.name] = (qsfMap[r.year][r.name] || 0) + r.point;
+        } else if (r.status === "F") {
+          if (!fMap[r.year]) fMap[r.year] = {};
+          fMap[r.year][r.name] = (fMap[r.year][r.name] || 0) + r.point;
+        }
+      }
+
+      const results = {};
+      for (const year of years) {
+        const qsf = qsfMap[year] || {};
+        const f   = fMap[year]   || {};
+        const hasF = Object.keys(f).length > 0;
+
+        const top4 = Object.entries(qsf)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 4)
+          .map(([name, qsfTotal]) => {
+            const carryOver = qsfTotal / 2;
+            const fPoints   = f[name] || 0;
+            return { name, qsfTotal, carryOver, fPoints, total: carryOver + fPoints };
+          });
+
+        if (hasF) top4.sort((a, b) => b.total - a.total);
+
+        results[year] = { finalists: top4, hasF };
+      }
+      return results;
+    }
+
+    function buildChampionsTable(allRecords, years) {
+      const champions = computeChampions(allRecords, years);
+      const table = document.getElementById("tbl-champions");
+
+      const thead = table.createTHead();
+      const hrow  = thead.insertRow();
+      th(hrow, "年");
+      th(hrow, "優勝");
+      th(hrow, "2位");
+      th(hrow, "3位");
+      th(hrow, "4位");
+
+      const tbody = table.createTBody();
+      for (const year of years) {
+        const { finalists, hasF } = champions[year] || { finalists: [], hasF: false };
+        const row = tbody.insertRow();
+        td(row, year, true);
+
+        if (finalists.length === 0) {
+          const cell = row.insertCell();
+          cell.colSpan = 4;
+          cell.textContent = "データなし";
+          cell.style.textAlign = "center";
+          cell.style.color = "#888";
+          continue;
+        }
+
+        if (!hasF) {
+          // No final round — show top Q/SF players without final total
+          for (let i = 0; i < 4; i++) {
+            const f = finalists[i];
+            const cell = row.insertCell();
+            if (f) {
+              cell.textContent = `${f.name} (${f.qsfTotal.toFixed(1)})`;
+              if (i === 0) cell.style.color = "#ffd700";
+            } else {
+              cell.textContent = "—";
+              cell.style.color = "#888";
+            }
+            cell.style.textAlign = "right";
+          }
+        } else {
+          for (let i = 0; i < 4; i++) {
+            const f = finalists[i];
+            const cell = row.insertCell();
+            if (f) {
+              cell.textContent = `${f.name} (${f.total.toFixed(1)})`;
+              if (i === 0) cell.style.color = "#ffd700";
+            } else {
+              cell.textContent = "—";
+              cell.style.color = "#888";
+            }
+            cell.style.textAlign = "right";
+          }
+        }
       }
     }
 
@@ -175,10 +310,16 @@
       th(hrow, "4位");
       th(hrow, "平均着順");
 
+      const sorted = players
+        .map(p => {
+          const d = rankMap[p] || { 1:0, 2:0, 3:0, 4:0, sum:0, count:0 };
+          const avg = d.count > 0 ? d.sum / d.count : Infinity;
+          return { p, d, avg };
+        })
+        .sort((a, b) => a.avg - b.avg);
+
       const tbody = table.createTBody();
-      for (const p of players) {
-        const d = rankMap[p] || { 1:0, 2:0, 3:0, 4:0, sum:0, count:0 };
-        const avg = d.count > 0 ? (d.sum / d.count).toFixed(2) : "NaN";
+      for (const { p, d, avg } of sorted) {
         const row = tbody.insertRow();
         td(row, p, true);
         td(row, d.count);
@@ -186,7 +327,7 @@
         td(row, d[2]);
         td(row, d[3]);
         td(row, d[4]);
-        td(row, avg);
+        td(row, avg === Infinity ? "NaN" : avg.toFixed(2));
       }
     }
 

@@ -14,7 +14,7 @@ const db = admin.firestore();
 
 const YEARS = [
   "2016", "2017", "2018", "2019", "2020", "2021",
-  "202205", "202212", "2023", "202406", "202412",
+  "202205", "202212", "2023", "202406", "202412",'2025'
 ];
 
 async function clearCollection() {
@@ -41,7 +41,7 @@ async function clearCollection() {
 }
 
 async function importYear(year) {
-  const filePath = path.join(__dirname, `../csv/data${year}_processed.csv`);
+  const filePath = path.join(__dirname, `../csv/data${year}.csv`);
   if (!fs.existsSync(filePath)) {
     console.warn(`  [skip] ${filePath} not found`);
     return 0;
@@ -49,6 +49,18 @@ async function importYear(year) {
 
   const raw = fs.readFileSync(filePath, "utf-8");
   const records = parse(raw, { columns: true, skip_empty_lines: true });
+
+  // Compute rank per (game, groups): sort by point desc, assign 1-4
+  const tableMap = {};
+  for (const row of records) {
+    const key = `${row.game}__${row.groups}`;
+    if (!tableMap[key]) tableMap[key] = [];
+    tableMap[key].push(row);
+  }
+  for (const rows of Object.values(tableMap)) {
+    rows.sort((a, b) => parseFloat(b.point) - parseFloat(a.point));
+    rows.forEach((r, i) => { r._rank = i + 1; });
+  }
 
   let batch = db.batch();
   let batchCount = 0;
@@ -63,7 +75,7 @@ async function importYear(year) {
       status: row.status,
       name:   row.name,
       point:  parseFloat(row.point),
-      rank:   parseFloat(row.rank),
+      rank:   row._rank,
     });
     batchCount++;
     total++;
