@@ -52,14 +52,27 @@
         <table id="tbl-champions" class="table_stats"></table>
       </div>
 
-      <h2 style="margin-top:40px;">予選得点</h2>
-      <p style="color:#aaa; font-size:0.85em;">予選・SF(status=Q/SF)のpoint合計。NaN=不参加。</p>
+      <div id="status-filter" style="margin-top:36px; margin-bottom:4px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+        <span style="color:#aaa; font-size:0.85em;">集計対象：</span>
+        <label style="color:#ccc; font-size:0.9em; cursor:pointer; display:flex; align-items:center; gap:5px;">
+          <input type="checkbox" id="chk-Q"  checked> 予選 (Q)
+        </label>
+        <label style="color:#ccc; font-size:0.9em; cursor:pointer; display:flex; align-items:center; gap:5px;">
+          <input type="checkbox" id="chk-SF" checked> セミファイナル (SF)
+        </label>
+        <label style="color:#ccc; font-size:0.9em; cursor:pointer; display:flex; align-items:center; gap:5px;">
+          <input type="checkbox" id="chk-F"> 決勝 (F)
+        </label>
+      </div>
+
+      <h2 style="margin-top:20px;">予選得点</h2>
+      <p style="color:#aaa; font-size:0.85em;">選択したステータスのpoint合計。NaN=不参加。</p>
       <div style="overflow-x:auto;">
         <table id="tbl-points" class="table_stats"></table>
       </div>
 
       <h2 style="margin-top:40px;">着順分布</h2>
-      <p style="color:#aaa; font-size:0.85em;">予選・SFの1〜4位回数と平均着順。</p>
+      <p style="color:#aaa; font-size:0.85em;">選択したステータスの1〜4位回数と平均着順（昇順）。</p>
       <div style="overflow-x:auto;">
         <table id="tbl-ranks" class="table_stats"></table>
       </div>
@@ -88,39 +101,60 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    let _allRecords = [];
+    let _years = [];
+
     async function main() {
       try {
         const snapshot = await db.collection("gameResult").get();
 
-        const allRecords = snapshot.docs.map(d => d.data());
+        _allRecords = snapshot.docs.map(d => d.data());
 
-        if (allRecords.length === 0) {
+        if (_allRecords.length === 0) {
           showError("Firestoreにデータがありません。addCSV.js でインポートしてください。");
           return;
         }
 
-        const qsfRecords = allRecords.filter(r => r.status === "Q" || r.status === "SF");
+        const yearsInData = new Set(_allRecords.map(r => r.year));
+        _years = YEAR_ORDER.filter(y => yearsInData.has(y));
 
-        const playerGameCount = {};
-        for (const r of qsfRecords) {
-          playerGameCount[r.name] = (playerGameCount[r.name] || 0) + 1;
-        }
-        const players = Object.keys(playerGameCount)
-          .sort((a, b) => playerGameCount[b] - playerGameCount[a]);
-
-        const yearsInData = new Set(allRecords.map(r => r.year));
-        const years = YEAR_ORDER.filter(y => yearsInData.has(y));
-
-        buildChampionsTable(allRecords, years);
-        buildPointsTable(qsfRecords, years, players);
-        buildRanksTable(qsfRecords, players);
+        buildChampionsTable(_allRecords, _years);
+        renderFilteredTables();
 
         document.getElementById("loading").style.display = "none";
         document.getElementById("stats-content").style.display = "block";
 
+        ["chk-Q", "chk-SF", "chk-F"].forEach(id => {
+          document.getElementById(id).addEventListener("change", renderFilteredTables);
+        });
+
       } catch (err) {
         showError("Firestore取得エラー: " + err.message);
       }
+    }
+
+    function renderFilteredTables() {
+      const statuses = new Set();
+      if (document.getElementById("chk-Q").checked)  statuses.add("Q");
+      if (document.getElementById("chk-SF").checked) statuses.add("SF");
+      if (document.getElementById("chk-F").checked)  statuses.add("F");
+
+      const filtered = _allRecords.filter(r => statuses.has(r.status));
+
+      document.getElementById("tbl-points").innerHTML = "";
+      document.getElementById("tbl-ranks").innerHTML = "";
+
+      if (filtered.length === 0) return;
+
+      const playerGameCount = {};
+      for (const r of filtered) {
+        playerGameCount[r.name] = (playerGameCount[r.name] || 0) + 1;
+      }
+      const players = Object.keys(playerGameCount)
+        .sort((a, b) => playerGameCount[b] - playerGameCount[a]);
+
+      buildPointsTable(filtered, _years, players);
+      buildRanksTable(filtered, players);
     }
 
     function computeChampions(allRecords, years) {
@@ -276,10 +310,16 @@
       th(hrow, "4位");
       th(hrow, "平均着順");
 
+      const sorted = players
+        .map(p => {
+          const d = rankMap[p] || { 1:0, 2:0, 3:0, 4:0, sum:0, count:0 };
+          const avg = d.count > 0 ? d.sum / d.count : Infinity;
+          return { p, d, avg };
+        })
+        .sort((a, b) => a.avg - b.avg);
+
       const tbody = table.createTBody();
-      for (const p of players) {
-        const d = rankMap[p] || { 1:0, 2:0, 3:0, 4:0, sum:0, count:0 };
-        const avg = d.count > 0 ? (d.sum / d.count).toFixed(2) : "NaN";
+      for (const { p, d, avg } of sorted) {
         const row = tbody.insertRow();
         td(row, p, true);
         td(row, d.count);
@@ -287,7 +327,7 @@
         td(row, d[2]);
         td(row, d[3]);
         td(row, d[4]);
-        td(row, avg);
+        td(row, avg === Infinity ? "NaN" : avg.toFixed(2));
       }
     }
 
