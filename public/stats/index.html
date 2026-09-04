@@ -93,6 +93,9 @@
       appId:             "1:544731021968:web:548739d70cf3c790c8ce15",
     };
 
+    const CACHE_VERSION = "20000101000000"; // auto-updated by addCSV.js
+    const CACHE_KEY = "gameResult_v" + CACHE_VERSION;
+
     const YEAR_ORDER = [
       "2016","2017","2018","2019","2020","2021",
       "202205","202212","2023","202406","202412","2025",
@@ -106,9 +109,25 @@
 
     async function main() {
       try {
-        const snapshot = await db.collection("gameResult").get();
+        // 古いバージョンのキャッシュを削除
+        for (const key of Object.keys(localStorage)) {
+          if (key.startsWith("gameResult_v") && key !== CACHE_KEY) {
+            localStorage.removeItem(key);
+          }
+        }
 
-        _allRecords = snapshot.docs.map(d => d.data());
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          _allRecords = JSON.parse(cached);
+        } else {
+          const snapshot = await db.collection("gameResult").get();
+          _allRecords = snapshot.docs.map(d => d.data());
+          try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify(_allRecords));
+          } catch (e) {
+            // localStorage容量超過時はキャッシュせず続行
+          }
+        }
 
         if (_allRecords.length === 0) {
           showError("Firestoreにデータがありません。addCSV.js でインポートしてください。");
