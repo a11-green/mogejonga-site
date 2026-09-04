@@ -97,6 +97,18 @@
       align-items: center;
       gap: 5px;
     }
+
+    #player-bio {
+      background: rgba(255,255,255,0.05);
+      border-left: 3px solid rgba(255,200,50,0.5);
+      border-radius: 0 8px 8px 0;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+      font-size: 0.9em;
+      line-height: 1.7;
+      color: #ccc;
+    }
+    #player-bio:empty { display: none; }
   </style>
 </head>
 <body>
@@ -126,10 +138,16 @@
 
       <div id="player-content" style="display:none;">
 
+        <!-- 選手紹介 -->
+        <div id="player-bio"></div>
+
         <!-- 決勝成績（フィルター対象外・常にF+A卓） -->
         <h2>決勝成績</h2>
         <div class="stat-cards" id="cards-finals-summary"></div>
         <div class="finals-cards" id="cards-finals-years"></div>
+
+        <!-- 対局成績ヘッダー -->
+        <h2 style="margin-top:32px;">対局成績</h2>
 
         <!-- フィルター -->
         <div class="filter-bar">
@@ -243,6 +261,43 @@
       }
     }
 
+    // ── Player profiles ───────────────────────────────────────────────────────
+    const PLAYER_PROFILES = {
+      "近藤": "もじょじょんが史上最強の男。190局・4回優勝・決勝進出8回はすべてトップクラスの記録であり、総得点1230.9はダントツの1位。平均着順2.37・連帯率53.2%と攻守のバランスも申し分ない。冷静な読みと手堅いオーラス処理で勝ちを積み上げる職人肌の打ち手。「勝てる局面でしっかり勝つ」哲学を体現しているが、たまに見せるド直球の攻めが対局相手の戦略を根底から崩すことも。おそらく日常でも何気なく最適解を選んでいるタイプ——本人は「なんとなく」と言いそうだが、それは嘘だ。",
+
+      "長屋": "安定感なら誰にも負けない鉄壁の守護神。185局で4着がわずか33回（17.8%）という圧倒的なラスト回避率を誇り、連帯率57.3%はグループ最高水準。優勝3回・決勝進出5回と実績も十分で、総得点995.9は全体2位。「絶対にラスを引かない男」として知られ、じわじわと相手を追い詰めるスタイルは砂漠の砂嵐のよう。失点をとにかく嫌う几帳面な性格が透けて見え、乱戦を好まないが土壇場の強さは折り紙付き。テスト前に絶対に徹夜をしないタイプ。",
+
+      "浅野": "勝ちと負けを豪快に繰り返す波乱万丈プレイヤー。203局は全員中最多出場で、1着55回・4着57回というジェットコースター成績が攻めの姿勢を物語る。決勝進出7回と常連ながら優勝はまだ1回。「派手に勝って派手に散る」スタイルで、隣の席から聞こえる雄叫びと舌打ちの落差が大きいことで有名（推測）。とにかく場数が多く場慣れしているが、その経験値が決勝での爆発力につながりきっていないのが唯一の課題。",
+
+      "枝松": "決勝の常連にして、あと一歩の男。184局・決勝進出6回・優勝2回は立派な実績だが、4着49回と荒れ場も少なくない二面性がある。予選では上位に食い込む実力があり、持越しでアドバンテージを作ることも多い。しかし決勝での勝率は控えめで、持越しリードを守りきれないシーンも目立つ。熱くなりやすい局面で「クールに見せようとして逆に空回りしている」姿が成績表から透けて見える気がする。",
+
+      "菊地": "3着専門家、または自称「安全運転の達人」。180局で3着55回（30.6%）という驚異的な3着率は、ある意味で超安定志向の証明。しかし総得点-875.9という現実は、トップを狙わない代償の重さを容赦なく示している。決勝進出3回・優勝0回——賞圏内に踏み込む手前で満足してしまう癖があるのかもしれない。「まあ3着ならOKかな」とつぶやきながら、心のどこかで「なんで俺、1着取れないんだろう…」と思っているはず。",
+
+      "諏訪": "バランスが良すぎるほどバランスが良いプレイヤー。165局で1着〜4着がほぼ均等（39/39/43/44）という分布は、ある意味で見事な安定感だが、逆に言えば「突出した強みがない」とも取れる。決勝進出4回・優勝0回——実力はあるのに最後に爆発しきれない。「むらがなさすぎる」という、褒めているのか貶しているのかよくわからない評価を受けているタイプ。人生でも「可もなく不可もなく」を標榜しているかもしれないが、それがちょっとした弱点かもしれない。",
+
+      "土橋": "2着の帝王。152局で2着なんと48回（31.6%）という異次元の2着率は、麻雀の神様から「あなたはいつも惜しい」と言われているよう。連帯率54.6%は高水準で、決勝進出5回・優勝1回と実績もある。トップを取り切れないケースが多いながら、ラスも少なく極めて安定した連帯型プレイヤー。「なぜかあと一歩でトップを逃す日」に全員の共感を集めており、日常生活でも「惜しかった〜！」が口癖である可能性が高い。",
+
+      "中山": "じわじわと実力を蓄える苦労人。149局で4着42回とやや苦しい局面も多く、総得点は-277.9。しかしそれでも決勝には2度顔を出しており、予選でのしぶとさは本物。全体的にやや受け身のスタイルで、自分のペースで打てる局は強いが外からプレッシャーをかけられると崩れやすいかもしれない。「気づいたら誰かの術中にはまっていた」系のキャラクターで、侮ると足をすくわれる隠れた実力者。",
+
+      "落合": "麻雀界の不思議な安定感の持ち主。132局で1着わずか23回（17.4%）ながら、2着38回・3着41回と崩れずに立ち回れる実力はある。ラスも30回に抑えておりじりじりとした負けが多い印象。総得点-607.2は主に僅差の取りこぼしが積み重なった結果で、「あと少し」のシーンが多かったと思われる。対戦相手には存在感が薄く見えることもあるかもしれないが、油断すると想定外の手で刺されるタイプ。",
+
+      "藤好": "32局・平均着順2.88と苦しいデータが並ぶが、4着13回と守りきれない局面が目立つ。まだまだ発展途上であり、経験を積めば数値は改善されるはず。逆境に強いタイプかどうかは、これからの対局で見えてくる。",
+
+      "きんつ": "18局ながら1着7回・連帯率50%と上々の出だし。平均着順2.39は中堅以上のレベルで、決勝も1度経験済み。短期間のデータながら確実な実力を示しており、より多くの対局を経てさらに化けるかもしれない存在。",
+
+      "三田村": "18局でまさかの平均着順2.22・連帯率61.1%はグループでもトップクラスの数値。サンプル数は少ないが、このペースを維持できれば常連組を脅かす脅威の新星。「え、なんか強くない？」という視線を集める存在になりつつある。",
+
+      "森田": "16局・平均着順2.81とまだ苦戦中。大きな振れ幅を経験しながらスタイルを確立していく時期にある。これからに期待。",
+
+      "植田": "16局・平均着順2.62。ほぼ平均的な滑り出しで、良い時と悪い時が混在している段階。自分の型を見つければ伸び代は十分。",
+
+      "鎌田": "16局ながら連帯率68.8%という驚愕の数値を叩き出す連帯マシン。2着7回とほぼ毎回上位に食い込んでいるが、優勝はまだ0回。「1着が取れないことだけが悩み」という贅沢な課題を抱えている。",
+
+      "仲": "14局・連帯率57.1%と良好な立ち上がり。データは少ないが、安定した成績を残せており今後のレギュラー参加に期待が集まる。",
+
+      "長山": "14局・平均着順2.50とほぼ平均的な成績。まずは場数を踏んで自分のスタイルを確立していく段階。",
+    };
+
     // ── Main entry ────────────────────────────────────────────────────────────
     function showPlayer(name) {
       const content = document.getElementById("player-content");
@@ -258,6 +313,7 @@
       const recs = allRecs.filter(r => statuses.has(r.status));
 
       content.style.display = "block";
+      document.getElementById("player-bio").textContent = PLAYER_PROFILES[name] || "";
       buildFinalsSection(name);
       buildRankCards(recs);
       buildScoreCards(recs);
@@ -329,14 +385,15 @@
       }
 
       const rankColors = ["rank-1","rank-2","rank-3","rank-4"];
+      const ordinals   = ["","1st","2nd","3rd","4th"];
       for (const { year, pos, total, hasF } of myFinalYears) {
-        const rankCls = pos >= 1 && pos <= 4 ? rankColors[pos - 1] : "";
-        // Non-F years (e.g. 2016): label as "予選" to distinguish from proper finals
-        const subLabel = hasF ? "" : `<span style="font-size:0.65em;color:#888;margin-left:2px;">予選</span>`;
+        const rankCls  = pos >= 1 && pos <= 4 ? rankColors[pos - 1] : "";
+        const ordinal  = ordinals[pos] || (pos + "th");
+        const subLabel = hasF ? "" : `<span style="font-size:0.6em;color:#888;margin-left:3px;">予選</span>`;
         yearsEl.innerHTML += `
           <div class="final-card">
             <div class="fc-year">${year}</div>
-            <div class="fc-rank ${rankCls}">${pos}着${subLabel}</div>
+            <div class="fc-rank ${rankCls}">${ordinal}${subLabel}</div>
             <div class="fc-pt">${total >= 0 ? "+" : ""}${total.toFixed(1)}</div>
           </div>`;
       }
@@ -353,6 +410,9 @@
       const avg = rankCnt > 0 ? (rankSum / rankCnt).toFixed(2) : "—";
       const avgColor = avg !== "—" ? (parseFloat(avg) < 2.5 ? "pos" : "neg") : "";
 
+      const rentai     = rankCnt > 0 ? ((cnt[1] + cnt[2]) / rankCnt * 100).toFixed(1) : "—";
+      const rentaiColor = rentai !== "—" ? (parseFloat(rentai) >= 50 ? "pos" : "neg") : "";
+
       document.getElementById("cards-ranks").innerHTML = `
         <div class="stat-card"><div class="label">1着</div><div class="value rank-1">${cnt[1]}</div></div>
         <div class="stat-card"><div class="label">2着</div><div class="value rank-2">${cnt[2]}</div></div>
@@ -360,6 +420,7 @@
         <div class="stat-card"><div class="label">4着</div><div class="value rank-4">${cnt[4]}</div></div>
         <div class="stat-card"><div class="label">対局数</div><div class="value">${rankCnt}</div></div>
         <div class="stat-card"><div class="label">平均着順</div><div class="value ${avgColor}">${avg}</div></div>
+        <div class="stat-card"><div class="label">連帯率</div><div class="value ${rentaiColor}">${rentai !== "—" ? rentai + "%" : "—"}</div></div>
       `;
     }
 
