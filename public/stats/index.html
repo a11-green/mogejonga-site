@@ -25,6 +25,12 @@
       font-weight: bold;
       border-top: 2px solid #fff;
     }
+    #tbl-matchup-pt th, #tbl-matchup-pt td,
+    #tbl-matchup-rnk th, #tbl-matchup-rnk td {
+      min-width: 52px;
+      font-size: 0.88em;
+      padding: 8px 12px;
+    }
   </style>
 </head>
 <body>
@@ -34,6 +40,7 @@
         <li><a href="../index.html"            class="link-to">Home</a></li>
         <li><a href="../data/index.html"       class="link-to">Data</a></li>
         <li><a href="./index.html"             class="link-now">Stats</a></li>
+        <li><a href="../player/index.html"     class="link-to">Player</a></li>
         <li><a href="../regulation/index.html" class="link-to">Regulation</a></li>
       </ul>
     </header>
@@ -46,7 +53,7 @@
 
     <div id="stats-content" style="display:none;">
 
-      <h2>各年の優勝</h2>
+      <h2>歴代優勝者</h2>
       <p style="color:#aaa; font-size:0.85em;">Q+SF合計上位4名が決勝進出。持越し（Q+SF合計÷2）＋決勝ポイントで最終順位決定。</p>
       <div style="overflow-x:auto;">
         <table id="tbl-champions" class="table_stats"></table>
@@ -65,16 +72,28 @@
         </label>
       </div>
 
-      <h2 style="margin-top:20px;">予選得点</h2>
-      <p style="color:#aaa; font-size:0.85em;">選択したステータスのpoint合計。NaN=不参加。</p>
+      <h2 style="margin-top:20px;">累計得点</h2>
+      <p style="color:#aaa; font-size:0.85em;">選択したステータス（予選、セミファイナル、決勝）のpoint合計。NaN=不参加。</p>
       <div style="overflow-x:auto;">
         <table id="tbl-points" class="table_stats"></table>
       </div>
 
       <h2 style="margin-top:40px;">着順分布</h2>
-      <p style="color:#aaa; font-size:0.85em;">選択したステータスの1〜4位回数と平均着順（昇順）。</p>
+      <p style="color:#aaa; font-size:0.85em;">選択したステータス（予選、セミファイナル、決勝）の1〜4位回数と平均着順（昇順）。</p>
       <div style="overflow-x:auto;">
         <table id="tbl-ranks" class="table_stats"></table>
+      </div>
+
+      <h2 style="margin-top:40px;">同卓時得点</h2>
+      <p style="color:#aaa; font-size:0.85em;">行プレイヤーが列プレイヤーと同卓だったゲームの得点合計。</p>
+      <div style="overflow-x:auto;">
+        <table id="tbl-matchup-pt" class="table_stats"></table>
+      </div>
+
+      <h2 style="margin-top:40px;">同卓時平均着順</h2>
+      <p style="color:#aaa; font-size:0.85em;">行プレイヤーが列プレイヤーと同卓だったゲームの平均着順。</p>
+      <div style="overflow-x:auto;">
+        <table id="tbl-matchup-rnk" class="table_stats"></table>
       </div>
 
     </div>
@@ -93,6 +112,9 @@
       appId:             "1:544731021968:web:548739d70cf3c790c8ce15",
     };
 
+    const CACHE_VERSION = "20000101000000"; // auto-updated by addCSV.js
+    const CACHE_KEY = "gameResult_v" + CACHE_VERSION;
+
     const YEAR_ORDER = [
       "2016","2017","2018","2019","2020","2021",
       "202205","202212","2023","202406","202412","2025",
@@ -106,9 +128,25 @@
 
     async function main() {
       try {
-        const snapshot = await db.collection("gameResult").get();
+        // 古いバージョンのキャッシュを削除
+        for (const key of Object.keys(localStorage)) {
+          if (key.startsWith("gameResult_v") && key !== CACHE_KEY) {
+            localStorage.removeItem(key);
+          }
+        }
 
-        _allRecords = snapshot.docs.map(d => d.data());
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          _allRecords = JSON.parse(cached);
+        } else {
+          const snapshot = await db.collection("gameResult").get();
+          _allRecords = snapshot.docs.map(d => d.data());
+          try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify(_allRecords));
+          } catch (e) {
+            // localStorage容量超過時はキャッシュせず続行
+          }
+        }
 
         if (_allRecords.length === 0) {
           showError("Firestoreにデータがありません。addCSV.js でインポートしてください。");
@@ -141,8 +179,10 @@
 
       const filtered = _allRecords.filter(r => statuses.has(r.status));
 
-      document.getElementById("tbl-points").innerHTML = "";
-      document.getElementById("tbl-ranks").innerHTML = "";
+      document.getElementById("tbl-points").innerHTML      = "";
+      document.getElementById("tbl-ranks").innerHTML       = "";
+      document.getElementById("tbl-matchup-pt").innerHTML  = "";
+      document.getElementById("tbl-matchup-rnk").innerHTML = "";
 
       if (filtered.length === 0) return;
 
@@ -155,6 +195,84 @@
 
       buildPointsTable(filtered, _years, players);
       buildRanksTable(filtered, players);
+      buildMatchupTables(filtered, players);
+    }
+
+    function buildMatchupTables(records, players) {
+      // Group records by (year, game, groups) — each table instance
+      const tableMap = {};
+      for (const r of records) {
+        const key = `${r.year}_${r.game}_${r.groups}`;
+        if (!tableMap[key]) tableMap[key] = [];
+        tableMap[key].push(r);
+      }
+
+      // Compute pairwise point sum and rank for (row player, col player)
+      const ptMap  = {}; // ptMap[row][col]  = total points of row when co-playing with col
+      const rnkMap = {}; // rnkMap[row][col] = { sum, count }
+
+      for (const group of Object.values(tableMap)) {
+        for (const r of group) {
+          for (const q of group) {
+            if (r.name === q.name) continue;
+            if (!ptMap[r.name])           ptMap[r.name]           = {};
+            if (!rnkMap[r.name])          rnkMap[r.name]          = {};
+            ptMap[r.name][q.name]  = (ptMap[r.name][q.name]  || 0) + r.point;
+            if (!rnkMap[r.name][q.name])  rnkMap[r.name][q.name]  = { sum: 0, count: 0 };
+            rnkMap[r.name][q.name].sum   += r.rank;
+            rnkMap[r.name][q.name].count += 1;
+          }
+        }
+      }
+
+      _buildMatchupTable(
+        document.getElementById("tbl-matchup-pt"),
+        players,
+        (row, col) => {
+          if (row === col) return { text: "—", color: null };
+          const v = ptMap[row]?.[col];
+          if (v === undefined) return { text: "—", color: null };
+          return {
+            text: (v > 0 ? "+" : "") + v.toFixed(1),
+            color: v > 0 ? "#7fc97f" : v < 0 ? "#f88070" : null,
+          };
+        }
+      );
+
+      _buildMatchupTable(
+        document.getElementById("tbl-matchup-rnk"),
+        players,
+        (row, col) => {
+          if (row === col) return { text: "—", color: null };
+          const d = rnkMap[row]?.[col];
+          if (!d || d.count === 0) return { text: "—", color: null };
+          const avg = d.sum / d.count;
+          return {
+            text: avg.toFixed(2),
+            color: avg < 2.5 ? "#7fc97f" : avg > 2.5 ? "#f88070" : null,
+          };
+        }
+      );
+    }
+
+    function _buildMatchupTable(table, players, cellFn) {
+      const thead = table.createTHead();
+      const hrow  = thead.insertRow();
+      th(hrow, "");
+      for (const p of players) th(hrow, p);
+
+      const tbody = table.createTBody();
+      for (const row of players) {
+        const tr = tbody.insertRow();
+        td(tr, row, true);
+        for (const col of players) {
+          const { text, color } = cellFn(row, col);
+          const cell = tr.insertCell();
+          cell.textContent  = text;
+          cell.style.textAlign = "right";
+          if (color) cell.style.color = color;
+        }
+      }
     }
 
     function computeChampions(allRecords, years) {
@@ -271,8 +389,9 @@
         td(row, year, true);
         for (const p of players) {
           const val = pointMap[year]?.[p];
-          td(row, val !== undefined ? val.toFixed(1) : "NaN");
+          const cell = td(row, val !== undefined ? val.toFixed(1) : "—");
           if (val !== undefined) {
+            cell.style.color = val > 0 ? "#7fc97f" : val < 0 ? "#f88070" : "";
             playerTotal[p] = (playerTotal[p] || 0) + val;
           }
         }
@@ -283,7 +402,10 @@
       td(totalRow, "Total", true);
       for (const p of players) {
         const v = playerTotal[p];
-        td(totalRow, v !== undefined ? v.toFixed(1) : "NaN");
+        const cell = td(totalRow, v !== undefined ? v.toFixed(1) : "—");
+        if (v !== undefined) {
+          cell.style.color = v > 0 ? "#7fc97f" : v < 0 ? "#f88070" : "";
+        }
       }
     }
 
@@ -327,7 +449,10 @@
         td(row, d[2]);
         td(row, d[3]);
         td(row, d[4]);
-        td(row, avg === Infinity ? "NaN" : avg.toFixed(2));
+        const avgCell = td(row, avg === Infinity ? "—" : avg.toFixed(2));
+        if (avg !== Infinity) {
+          avgCell.style.color = avg < 2.5 ? "#7fc97f" : avg > 2.5 ? "#f88070" : "";
+        }
       }
     }
 
@@ -340,6 +465,7 @@
       const cell = document.createElement(isHeader ? "th" : "td");
       cell.textContent = text;
       row.appendChild(cell);
+      return cell;
     }
     function showError(msg) {
       document.getElementById("loading").style.display = "none";

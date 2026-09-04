@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>mogejonga - Player</title>
+  <link rel="stylesheet" href="../css/layout.css">
+  <style>
+    .loading { padding: 20px; font-size: 1.2em; color: #ccc; }
+    .error   { padding: 20px; color: #f88; }
+
+    .stat-cards {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 12px 0 8px;
+    }
+    .stat-card {
+      background: rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 10px 18px;
+      text-align: center;
+      min-width: 80px;
+    }
+    .stat-card .label { font-size: 0.75em; color: #aaa; margin-bottom: 4px; }
+    .stat-card .value { font-size: 1.35em; font-weight: bold; }
+    .stat-card .sub   { font-size: 0.7em; color: #888; margin-top: 3px; }
+
+    .rank-1 { color: #ffd700; }
+    .rank-2 { color: #c0c0c0; }
+    .rank-3 { color: #cd7f32; }
+    .rank-4 { color: #777; }
+    .pos    { color: #7fc97f; }
+    .neg    { color: #f88070; }
+
+    .table_stats th, .table_stats td {
+      text-align: right;
+      min-width: 90px;
+      padding: 8px 16px;
+    }
+    .table_stats th:first-child, .table_stats td:first-child { text-align: left; }
+    .total-row { font-weight: bold; border-top: 2px solid #fff; }
+
+    .finals-cards {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .final-card {
+      background: rgba(255,200,50,0.12);
+      border: 1px solid rgba(255,200,50,0.3);
+      border-radius: 8px;
+      padding: 8px 14px;
+      text-align: center;
+      min-width: 72px;
+    }
+    .final-card .fc-year  { font-size: 0.72em; color: #aaa; margin-bottom: 3px; }
+    .final-card .fc-rank  { font-size: 1.2em; font-weight: bold; }
+    .final-card .fc-pt    { font-size: 0.72em; color: #bbb; margin-top: 2px; }
+
+    .opponent-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .opponent-card {
+      background: rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 12px 16px;
+    }
+    .opponent-card .opp-label  { font-size: 0.75em; color: #aaa; margin-bottom: 5px; }
+    .opponent-card .opp-name   { font-size: 1.15em; font-weight: bold; }
+    .opponent-card .opp-detail { font-size: 0.78em; color: #bbb; margin-top: 3px; }
+
+    .charts-row {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin: 16px 0 4px;
+    }
+    .filter-bar span { font-size: 0.85em; color: #aaa; }
+    .filter-bar label {
+      font-size: 0.9em;
+      color: #ccc;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <header>
+      <ul class="header-list">
+        <li><a href="../index.html"            class="link-to">Home</a></li>
+        <li><a href="../data/index.html"       class="link-to">Data</a></li>
+        <li><a href="../stats/index.html"      class="link-to">Stats</a></li>
+        <li><a href="./index.html"             class="link-now">Player</a></li>
+        <li><a href="../regulation/index.html" class="link-to">Regulation</a></li>
+      </ul>
+    </header>
+  </div>
+
+  <div class="contents">
+    <h1>Player Stats</h1>
+    <div id="loading-init" class="loading">データを読み込み中...</div>
+    <div id="error" class="error" style="display:none;"></div>
+
+    <div id="main-content" style="display:none;">
+      <div style="margin-bottom:16px;">
+        <select id="player-select" onchange="showPlayer(this.value)">
+          <option value="">-- プレイヤーを選択 --</option>
+        </select>
+      </div>
+
+      <div id="player-content" style="display:none;">
+
+        <!-- 決勝成績（フィルター対象外・常にF+A卓） -->
+        <h2>決勝成績</h2>
+        <div class="stat-cards" id="cards-finals-summary"></div>
+        <div class="finals-cards" id="cards-finals-years"></div>
+
+        <!-- フィルター -->
+        <div class="filter-bar">
+          <span>集計対象：</span>
+          <label><input type="checkbox" id="chk-Q"  checked> 予選 (Q)</label>
+          <label><input type="checkbox" id="chk-SF" checked> セミファイナル (SF)</label>
+          <label><input type="checkbox" id="chk-F"> 決勝 (F)</label>
+        </div>
+
+        <!-- 着順 / 得点 summary cards -->
+        <div class="stat-cards" id="cards-ranks"></div>
+        <div class="stat-cards" id="cards-scores"></div>
+
+        <!-- Charts -->
+        <div class="charts-row">
+          <div style="width:240px; flex-shrink:0;">
+            <div style="position:relative; height:240px;">
+              <canvas id="chart-ranks"></canvas>
+            </div>
+          </div>
+          <div style="flex:1; min-width:260px;">
+            <div style="position:relative; height:240px;">
+              <canvas id="chart-scores"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Yearly table -->
+        <h2 style="margin-top:32px;">年度別成績</h2>
+        <div style="overflow-x:auto;">
+          <table id="tbl-yearly" class="table_stats"></table>
+        </div>
+
+        <!-- Opponents -->
+        <h2 style="margin-top:32px;">対戦成績（50対局以上）</h2>
+        <div class="opponent-grid" id="opponent-grid"></div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey:            "AIzaSyAmCR3LPPTbwaGaZklCyvNpX-1ZrqN9dGg",
+      authDomain:        "mogejonga-site.firebaseapp.com",
+      projectId:         "mogejonga-site",
+      storageBucket:     "mogejonga-site.firebasestorage.app",
+      messagingSenderId: "544731021968",
+      appId:             "1:544731021968:web:548739d70cf3c790c8ce15",
+    };
+
+    const CACHE_VERSION = "20000101000000"; // auto-updated by addCSV.js
+    const CACHE_KEY     = "gameResult_v" + CACHE_VERSION;
+
+    const YEAR_ORDER = [
+      "2016","2017","2018","2019","2020","2021",
+      "202205","202212","2023","202406","202412","2025",
+    ];
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let _allRecords  = [];
+    let _chartRanks  = null;
+    let _chartScores = null;
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+    async function init() {
+      try {
+        for (const key of Object.keys(localStorage)) {
+          if (key.startsWith("gameResult_v") && key !== CACHE_KEY) {
+            localStorage.removeItem(key);
+          }
+        }
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          _allRecords = JSON.parse(cached);
+        } else {
+          const snap = await db.collection("gameResult").get();
+          _allRecords = snap.docs.map(d => d.data());
+          try { localStorage.setItem(CACHE_KEY, JSON.stringify(_allRecords)); } catch(e) {}
+        }
+
+        const gameCnt = {};
+        for (const r of _allRecords) gameCnt[r.name] = (gameCnt[r.name] || 0) + 1;
+        const players = Object.keys(gameCnt).sort((a, b) => gameCnt[b] - gameCnt[a]);
+
+        const sel = document.getElementById("player-select");
+        for (const p of players) {
+          const opt = document.createElement("option");
+          opt.value = opt.textContent = p;
+          sel.appendChild(opt);
+        }
+
+        ["chk-Q","chk-SF","chk-F"].forEach(id =>
+          document.getElementById(id).addEventListener("change", () =>
+            showPlayer(document.getElementById("player-select").value)
+          )
+        );
+
+        document.getElementById("loading-init").style.display = "none";
+        document.getElementById("main-content").style.display  = "block";
+      } catch(err) {
+        document.getElementById("loading-init").style.display = "none";
+        const el = document.getElementById("error");
+        el.textContent = "Firestore取得エラー: " + err.message;
+        el.style.display = "block";
+      }
+    }
+
+    // ── Main entry ────────────────────────────────────────────────────────────
+    function showPlayer(name) {
+      const content = document.getElementById("player-content");
+      if (!name) { content.style.display = "none"; return; }
+
+      const allRecs = _allRecords.filter(r => r.name === name);
+      if (!allRecs.length) { content.style.display = "none"; return; }
+
+      const statuses = new Set();
+      if (document.getElementById("chk-Q").checked)  statuses.add("Q");
+      if (document.getElementById("chk-SF").checked) statuses.add("SF");
+      if (document.getElementById("chk-F").checked)  statuses.add("F");
+      const recs = allRecs.filter(r => statuses.has(r.status));
+
+      content.style.display = "block";
+      buildFinalsSection(name);
+      buildRankCards(recs);
+      buildScoreCards(recs);
+      buildYearlyTable(recs);
+      buildOpponents(name);
+      buildCharts(recs);
+    }
+
+    // ── Finals section (always F+A, unaffected by filter) ────────────────────
+    function buildFinalsSection(name) {
+      // All F records where player was in A卓
+      const fRecs = _allRecords.filter(r => r.status === "F" && r.groups === "A");
+      const years = YEAR_ORDER.filter(y => fRecs.some(r => r.year === y));
+
+      const summaryEl = document.getElementById("cards-finals-summary");
+      const yearsEl   = document.getElementById("cards-finals-years");
+      summaryEl.innerHTML = "";
+      yearsEl.innerHTML   = "";
+
+      // Count years this player reached the final
+      const myYears = years.filter(y => fRecs.some(r => r.year === y && r.name === name));
+
+      summaryEl.innerHTML = `
+        <div class="stat-card">
+          <div class="label">決勝進出</div>
+          <div class="value">${myYears.length}<span style="font-size:0.55em;font-weight:normal;"> 回</span></div>
+        </div>`;
+
+      if (!myYears.length) {
+        yearsEl.innerHTML = '<p style="color:#888;">決勝進出なし</p>';
+        return;
+      }
+
+      for (const year of myYears) {
+        const yr = fRecs.filter(r => r.year === year);
+
+        // Sum F+A points per player, rank descending
+        const ptSum = {};
+        for (const r of yr) ptSum[r.name] = (ptSum[r.name] || 0) + r.point;
+        const sorted = Object.entries(ptSum).sort((a, b) => b[1] - a[1]);
+        const pos    = sorted.findIndex(([n]) => n === name) + 1;
+        const myPt   = ptSum[name];
+
+        const rankColors = ["rank-1","rank-2","rank-3","rank-4"];
+        const rankCls = pos >= 1 && pos <= 4 ? rankColors[pos-1] : "";
+
+        yearsEl.innerHTML += `
+          <div class="final-card">
+            <div class="fc-year">${year}</div>
+            <div class="fc-rank ${rankCls}">${pos > 0 ? pos + "着" : "—"}</div>
+            <div class="fc-pt">${myPt !== undefined ? (myPt>=0?"+":"") + myPt.toFixed(1) : "—"}</div>
+          </div>`;
+      }
+    }
+
+    // ── Rank summary cards ────────────────────────────────────────────────────
+    function buildRankCards(recs) {
+      const cnt = {1:0, 2:0, 3:0, 4:0};
+      let rankSum = 0, rankCnt = 0;
+      for (const r of recs) {
+        const ri = Math.round(r.rank);
+        if (ri >= 1 && ri <= 4) { cnt[ri]++; rankSum += ri; rankCnt++; }
+      }
+      const avg = rankCnt > 0 ? (rankSum / rankCnt).toFixed(2) : "—";
+      const avgColor = avg !== "—" ? (parseFloat(avg) < 2.5 ? "pos" : "neg") : "";
+
+      document.getElementById("cards-ranks").innerHTML = `
+        <div class="stat-card"><div class="label">1着</div><div class="value rank-1">${cnt[1]}</div></div>
+        <div class="stat-card"><div class="label">2着</div><div class="value rank-2">${cnt[2]}</div></div>
+        <div class="stat-card"><div class="label">3着</div><div class="value rank-3">${cnt[3]}</div></div>
+        <div class="stat-card"><div class="label">4着</div><div class="value rank-4">${cnt[4]}</div></div>
+        <div class="stat-card"><div class="label">対局数</div><div class="value">${rankCnt}</div></div>
+        <div class="stat-card"><div class="label">平均着順</div><div class="value ${avgColor}">${avg}</div></div>
+      `;
+    }
+
+    // ── Max/Min score cards ───────────────────────────────────────────────────
+    function buildScoreCards(recs) {
+      if (!recs.length) {
+        document.getElementById("cards-scores").innerHTML = "";
+        return;
+      }
+      let maxRec = recs[0], minRec = recs[0];
+      for (const r of recs) {
+        if (r.point > maxRec.point) maxRec = r;
+        if (r.point < minRec.point) minRec = r;
+      }
+      const fmt    = r => (r.point >= 0 ? "+" : "") + r.point.toFixed(1);
+      const detail = r => `${r.year} Game${r.game}`;
+
+      document.getElementById("cards-scores").innerHTML = `
+        <div class="stat-card">
+          <div class="label">最高得点（1Game）</div>
+          <div class="value pos">${fmt(maxRec)}</div>
+          <div class="sub">${detail(maxRec)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">最低得点（1Game）</div>
+          <div class="value neg">${fmt(minRec)}</div>
+          <div class="sub">${detail(minRec)}</div>
+        </div>
+      `;
+    }
+
+    // ── Yearly table ──────────────────────────────────────────────────────────
+    function buildYearlyTable(recs) {
+      const years = YEAR_ORDER.filter(y => recs.some(r => r.year === y));
+      const table = document.getElementById("tbl-yearly");
+      table.innerHTML = "";
+
+      const thead = table.createTHead();
+      const hr = thead.insertRow();
+      ["年度","対局数","得点","平均着順"].forEach(t => {
+        const th = document.createElement("th"); th.textContent = t; hr.appendChild(th);
+      });
+
+      const tbody = table.createTBody();
+      let totGames = 0, totPtSum = 0, totRankSum = 0;
+
+      for (const year of years) {
+        const yr   = recs.filter(r => r.year === year);
+        const pt   = yr.reduce((s, r) => s + r.point, 0);
+        const rnkS = yr.reduce((s, r) => s + r.rank, 0);
+        totGames   += yr.length;
+        totPtSum   += pt;
+        totRankSum += rnkS;
+
+        const avg = (rnkS / yr.length).toFixed(2);
+        const tr = tbody.insertRow();
+        cell(tr, year, true);
+        cell(tr, yr.length);
+        colorCell(tr, pt, v => (v>=0?"+":"") + v.toFixed(1));
+        rankCell(tr, parseFloat(avg), avg);
+      }
+
+      const tr = tbody.insertRow();
+      tr.classList.add("total-row");
+      const totAvg = totGames > 0 ? (totRankSum / totGames).toFixed(2) : "—";
+      cell(tr, "Total", true);
+      cell(tr, totGames);
+      colorCell(tr, totPtSum, v => (v>=0?"+":"") + v.toFixed(1));
+      rankCell(tr, parseFloat(totAvg), totAvg);
+    }
+
+    // ── Opponents ─────────────────────────────────────────────────────────────
+    function buildOpponents(name) {
+      const tableMap = {};
+      for (const r of _allRecords) {
+        const key = `${r.year}_${r.game}_${r.groups}`;
+        if (!tableMap[key]) tableMap[key] = [];
+        tableMap[key].push(r);
+      }
+
+      const ptMap = {}, rnkMap = {};
+      for (const group of Object.values(tableMap)) {
+        const me = group.find(r => r.name === name);
+        if (!me) continue;
+        for (const q of group) {
+          if (q.name === name) continue;
+          ptMap[q.name]  = (ptMap[q.name] || 0) + me.point;
+          if (!rnkMap[q.name]) rnkMap[q.name] = { sum: 0, count: 0 };
+          rnkMap[q.name].sum   += me.rank;
+          rnkMap[q.name].count += 1;
+        }
+      }
+
+      const qualified = Object.keys(rnkMap).filter(p => rnkMap[p].count >= 50);
+      const grid = document.getElementById("opponent-grid");
+      grid.innerHTML = "";
+
+      if (!qualified.length) {
+        grid.innerHTML = '<p style="color:#888;grid-column:1/-1;">50対局以上の対戦相手なし</p>';
+        return;
+      }
+
+      const avgOf   = p => rnkMap[p].sum / rnkMap[p].count;
+      const bestPt  = qualified.reduce((b, p) => ptMap[p]  > ptMap[b]  ? p : b);
+      const worstPt = qualified.reduce((b, p) => ptMap[p]  < ptMap[b]  ? p : b);
+      const bestRnk  = qualified.reduce((b, p) => avgOf(p) < avgOf(b)  ? p : b);
+      const worstRnk = qualified.reduce((b, p) => avgOf(p) > avgOf(b)  ? p : b);
+
+      const fmtPt  = p => `${ptMap[p]>=0?"+":""}${ptMap[p].toFixed(1)}pt（${rnkMap[p].count}対局）`;
+      const fmtRnk = p => `平均着順 ${avgOf(p).toFixed(2)}（${rnkMap[p].count}対局）`;
+
+      const cards = [
+        { label:"得意（得点）",  name: bestPt,   detail: fmtPt(bestPt),    cls:"pos" },
+        { label:"得意（着順）",  name: bestRnk,  detail: fmtRnk(bestRnk),  cls:"pos" },
+        { label:"苦手（得点）",  name: worstPt,  detail: fmtPt(worstPt),   cls:"neg" },
+        { label:"苦手（着順）",  name: worstRnk, detail: fmtRnk(worstRnk), cls:"neg" },
+      ];
+      for (const c of cards) {
+        grid.innerHTML += `
+          <div class="opponent-card">
+            <div class="opp-label">${c.label}</div>
+            <div class="opp-name ${c.cls}">${c.name}</div>
+            <div class="opp-detail">${c.detail}</div>
+          </div>`;
+      }
+    }
+
+    // ── Charts ────────────────────────────────────────────────────────────────
+    function buildCharts(recs) {
+      if (_chartRanks)  { _chartRanks.destroy();  _chartRanks  = null; }
+      if (_chartScores) { _chartScores.destroy(); _chartScores = null; }
+
+      // Pie: rank distribution
+      const cnt = {1:0, 2:0, 3:0, 4:0};
+      for (const r of recs) { const ri = Math.round(r.rank); if (ri>=1&&ri<=4) cnt[ri]++; }
+
+      _chartRanks = new Chart(document.getElementById("chart-ranks"), {
+        type: "pie",
+        data: {
+          labels: ["1着","2着","3着","4着"],
+          datasets: [{
+            data: [cnt[1], cnt[2], cnt[3], cnt[4]],
+            backgroundColor: ["rgba(255,215,0,0.75)","rgba(192,192,192,0.75)","rgba(205,127,50,0.75)","rgba(119,119,119,0.75)"],
+            borderColor:     ["#ffd700","#c0c0c0","#cd7f32","#777"],
+            borderWidth: 1,
+          }],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            title:  { display: true, text: "着順分布", color: "#ddd", font: { size: 13 } },
+            legend: { labels: { color: "#ccc", boxWidth: 14 } },
+          },
+        },
+      });
+
+      // Bar + Line: yearly + cumulative — single y-axis (0 aligned)
+      const years = YEAR_ORDER.filter(y => recs.some(r => r.year === y));
+      let cum = 0;
+      const yearlyPt = [], cumPt = [];
+      for (const y of years) {
+        const pt = recs.filter(r => r.year === y).reduce((s, r) => s + r.point, 0);
+        cum += pt;
+        yearlyPt.push(parseFloat(pt.toFixed(1)));
+        cumPt.push(parseFloat(cum.toFixed(1)));
+      }
+
+      _chartScores = new Chart(document.getElementById("chart-scores"), {
+        data: {
+          labels: years,
+          datasets: [
+            {
+              type: "bar",
+              label: "年度別得点",
+              data: yearlyPt,
+              backgroundColor: yearlyPt.map(v => v >= 0 ? "rgba(127,201,127,0.55)" : "rgba(248,128,112,0.55)"),
+              borderColor:     yearlyPt.map(v => v >= 0 ? "#7fc97f" : "#f88070"),
+              borderWidth: 1,
+              order: 2,
+            },
+            {
+              type: "line",
+              label: "累積得点",
+              data: cumPt,
+              borderColor: "#4e79a7",
+              backgroundColor: "rgba(78,121,167,0.12)",
+              tension: 0,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              borderWidth: 2,
+              order: 1,
+            },
+          ],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            title:  { display: true, text: "年度別得点 / 累積得点", color: "#ddd", font: { size: 13 } },
+            legend: { labels: { color: "#ccc", boxWidth: 14 } },
+          },
+          scales: {
+            x: { ticks: { color: "#aaa" }, grid: { color: "rgba(255,255,255,0.07)" } },
+            y: { ticks: { color: "#aaa" }, grid: { color: "rgba(255,255,255,0.07)" },
+                 beginAtZero: false },
+          },
+        },
+      });
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    function cell(row, text, isHeader = false) {
+      const el = document.createElement(isHeader ? "th" : "td");
+      el.textContent = text;
+      row.appendChild(el);
+      return el;
+    }
+    function colorCell(row, val, fmt) {
+      const el = cell(row, fmt(val));
+      el.style.color = val > 0 ? "#7fc97f" : val < 0 ? "#f88070" : "";
+      return el;
+    }
+    function rankCell(row, avg, text) {
+      const el = cell(row, text);
+      if (!isNaN(avg)) el.style.color = avg < 2.5 ? "#7fc97f" : avg > 2.5 ? "#f88070" : "";
+      return el;
+    }
+
+    init();
+  </script>
+</body>
+</html>
