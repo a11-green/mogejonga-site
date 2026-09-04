@@ -103,19 +103,18 @@ async function main() {
 
   console.log(`\nDone. Total: ${grandTotal} records imported.`);
 
-  // stats/index.html の CACHE_VERSION をタイムスタンプで更新
-  const statsPath = path.join(__dirname, "../../public/stats/index.html");
-  if (fs.existsSync(statsPath)) {
-    const pad = n => String(n).padStart(2, "0");
-    const now = new Date();
-    const version = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-    const html = fs.readFileSync(statsPath, "utf-8");
-    const updated = html.replace(
-      /const CACHE_VERSION = "[^"]*";/,
-      `const CACHE_VERSION = "${version}";`
-    );
-    fs.writeFileSync(statsPath, updated, "utf-8");
-    console.log(`Updated CACHE_VERSION to ${version} in stats/index.html`);
+  // CACHE_VERSION をタイムスタンプで更新
+  const pad = n => String(n).padStart(2, "0");
+  const now = new Date();
+  const version = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  const versionRe = /const CACHE_VERSION = "[^"]*";/g;
+
+  for (const relPath of ["../../public/stats/index.html", "../../public/player/index.html"]) {
+    const filePath = path.join(__dirname, relPath);
+    if (!fs.existsSync(filePath)) continue;
+    const updated = fs.readFileSync(filePath, "utf-8").replace(versionRe, `const CACHE_VERSION = "${version}";`);
+    fs.writeFileSync(filePath, updated, "utf-8");
+    console.log(`Updated CACHE_VERSION to ${version} in ${path.basename(path.dirname(filePath))}/index.html`);
   }
 
   process.exit(0);
