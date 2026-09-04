@@ -12,7 +12,7 @@
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
-      margin: 16px 0 8px;
+      margin: 12px 0 8px;
     }
     .stat-card {
       background: rgba(255,255,255,0.08);
@@ -40,6 +40,24 @@
     .table_stats th:first-child, .table_stats td:first-child { text-align: left; }
     .total-row { font-weight: bold; border-top: 2px solid #fff; }
 
+    .finals-cards {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .final-card {
+      background: rgba(255,200,50,0.12);
+      border: 1px solid rgba(255,200,50,0.3);
+      border-radius: 8px;
+      padding: 8px 14px;
+      text-align: center;
+      min-width: 72px;
+    }
+    .final-card .fc-year  { font-size: 0.72em; color: #aaa; margin-bottom: 3px; }
+    .final-card .fc-rank  { font-size: 1.2em; font-weight: bold; }
+    .final-card .fc-pt    { font-size: 0.72em; color: #bbb; margin-top: 2px; }
+
     .opponent-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -62,6 +80,23 @@
       margin-top: 16px;
       flex-wrap: wrap;
     }
+
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin: 16px 0 4px;
+    }
+    .filter-bar span { font-size: 0.85em; color: #aaa; }
+    .filter-bar label {
+      font-size: 0.9em;
+      color: #ccc;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
   </style>
 </head>
 <body>
@@ -83,7 +118,7 @@
     <div id="error" class="error" style="display:none;"></div>
 
     <div id="main-content" style="display:none;">
-      <div style="margin-bottom:20px;">
+      <div style="margin-bottom:16px;">
         <select id="player-select" onchange="showPlayer(this.value)">
           <option value="">-- プレイヤーを選択 --</option>
         </select>
@@ -91,7 +126,20 @@
 
       <div id="player-content" style="display:none;">
 
-        <!-- Rank / Score summary cards -->
+        <!-- 決勝成績（フィルター対象外・常にF+A卓） -->
+        <h2>決勝成績</h2>
+        <div class="stat-cards" id="cards-finals-summary"></div>
+        <div class="finals-cards" id="cards-finals-years"></div>
+
+        <!-- フィルター -->
+        <div class="filter-bar">
+          <span>集計対象：</span>
+          <label><input type="checkbox" id="chk-Q"  checked> 予選 (Q)</label>
+          <label><input type="checkbox" id="chk-SF" checked> セミファイナル (SF)</label>
+          <label><input type="checkbox" id="chk-F"> 決勝 (F)</label>
+        </div>
+
+        <!-- 着順 / 得点 summary cards -->
         <div class="stat-cards" id="cards-ranks"></div>
         <div class="stat-cards" id="cards-scores"></div>
 
@@ -179,6 +227,12 @@
           sel.appendChild(opt);
         }
 
+        ["chk-Q","chk-SF","chk-F"].forEach(id =>
+          document.getElementById(id).addEventListener("change", () =>
+            showPlayer(document.getElementById("player-select").value)
+          )
+        );
+
         document.getElementById("loading-init").style.display = "none";
         document.getElementById("main-content").style.display  = "block";
       } catch(err) {
@@ -194,15 +248,69 @@
       const content = document.getElementById("player-content");
       if (!name) { content.style.display = "none"; return; }
 
-      const recs = _allRecords.filter(r => r.name === name);
-      if (!recs.length) { content.style.display = "none"; return; }
+      const allRecs = _allRecords.filter(r => r.name === name);
+      if (!allRecs.length) { content.style.display = "none"; return; }
+
+      const statuses = new Set();
+      if (document.getElementById("chk-Q").checked)  statuses.add("Q");
+      if (document.getElementById("chk-SF").checked) statuses.add("SF");
+      if (document.getElementById("chk-F").checked)  statuses.add("F");
+      const recs = allRecs.filter(r => statuses.has(r.status));
 
       content.style.display = "block";
+      buildFinalsSection(name);
       buildRankCards(recs);
       buildScoreCards(recs);
       buildYearlyTable(recs);
       buildOpponents(name);
       buildCharts(recs);
+    }
+
+    // ── Finals section (always F+A, unaffected by filter) ────────────────────
+    function buildFinalsSection(name) {
+      // All F records where player was in A卓
+      const fRecs = _allRecords.filter(r => r.status === "F" && r.groups === "A");
+      const years = YEAR_ORDER.filter(y => fRecs.some(r => r.year === y));
+
+      const summaryEl = document.getElementById("cards-finals-summary");
+      const yearsEl   = document.getElementById("cards-finals-years");
+      summaryEl.innerHTML = "";
+      yearsEl.innerHTML   = "";
+
+      // Count years this player reached the final
+      const myYears = years.filter(y => fRecs.some(r => r.year === y && r.name === name));
+
+      summaryEl.innerHTML = `
+        <div class="stat-card">
+          <div class="label">決勝進出</div>
+          <div class="value">${myYears.length}<span style="font-size:0.55em;font-weight:normal;"> 回</span></div>
+        </div>`;
+
+      if (!myYears.length) {
+        yearsEl.innerHTML = '<p style="color:#888;">決勝進出なし</p>';
+        return;
+      }
+
+      for (const year of myYears) {
+        const yr = fRecs.filter(r => r.year === year);
+
+        // Sum F+A points per player, rank descending
+        const ptSum = {};
+        for (const r of yr) ptSum[r.name] = (ptSum[r.name] || 0) + r.point;
+        const sorted = Object.entries(ptSum).sort((a, b) => b[1] - a[1]);
+        const pos    = sorted.findIndex(([n]) => n === name) + 1;
+        const myPt   = ptSum[name];
+
+        const rankColors = ["rank-1","rank-2","rank-3","rank-4"];
+        const rankCls = pos >= 1 && pos <= 4 ? rankColors[pos-1] : "";
+
+        yearsEl.innerHTML += `
+          <div class="final-card">
+            <div class="fc-year">${year}</div>
+            <div class="fc-rank ${rankCls}">${pos > 0 ? pos + "着" : "—"}</div>
+            <div class="fc-pt">${myPt !== undefined ? (myPt>=0?"+":"") + myPt.toFixed(1) : "—"}</div>
+          </div>`;
+      }
     }
 
     // ── Rank summary cards ────────────────────────────────────────────────────
@@ -217,10 +325,10 @@
       const avgColor = avg !== "—" ? (parseFloat(avg) < 2.5 ? "pos" : "neg") : "";
 
       document.getElementById("cards-ranks").innerHTML = `
-        <div class="stat-card"><div class="label">1位</div><div class="value rank-1">${cnt[1]}</div></div>
-        <div class="stat-card"><div class="label">2位</div><div class="value rank-2">${cnt[2]}</div></div>
-        <div class="stat-card"><div class="label">3位</div><div class="value rank-3">${cnt[3]}</div></div>
-        <div class="stat-card"><div class="label">4位</div><div class="value rank-4">${cnt[4]}</div></div>
+        <div class="stat-card"><div class="label">1着</div><div class="value rank-1">${cnt[1]}</div></div>
+        <div class="stat-card"><div class="label">2着</div><div class="value rank-2">${cnt[2]}</div></div>
+        <div class="stat-card"><div class="label">3着</div><div class="value rank-3">${cnt[3]}</div></div>
+        <div class="stat-card"><div class="label">4着</div><div class="value rank-4">${cnt[4]}</div></div>
         <div class="stat-card"><div class="label">対局数</div><div class="value">${rankCnt}</div></div>
         <div class="stat-card"><div class="label">平均着順</div><div class="value ${avgColor}">${avg}</div></div>
       `;
@@ -228,6 +336,10 @@
 
     // ── Max/Min score cards ───────────────────────────────────────────────────
     function buildScoreCards(recs) {
+      if (!recs.length) {
+        document.getElementById("cards-scores").innerHTML = "";
+        return;
+      }
       let maxRec = recs[0], minRec = recs[0];
       for (const r of recs) {
         if (r.point > maxRec.point) maxRec = r;
@@ -258,38 +370,35 @@
 
       const thead = table.createTHead();
       const hr = thead.insertRow();
-      ["年度","対局数","得点","累積得点","平均着順"].forEach(t => {
+      ["年度","対局数","得点","平均着順"].forEach(t => {
         const th = document.createElement("th"); th.textContent = t; hr.appendChild(th);
       });
 
       const tbody = table.createTBody();
-      let cum = 0, totGames = 0, totRankSum = 0;
+      let totGames = 0, totPtSum = 0, totRankSum = 0;
 
       for (const year of years) {
         const yr   = recs.filter(r => r.year === year);
         const pt   = yr.reduce((s, r) => s + r.point, 0);
         const rnkS = yr.reduce((s, r) => s + r.rank, 0);
-        cum      += pt;
-        totGames += yr.length;
+        totGames   += yr.length;
+        totPtSum   += pt;
         totRankSum += rnkS;
 
         const avg = (rnkS / yr.length).toFixed(2);
         const tr = tbody.insertRow();
         cell(tr, year, true);
         cell(tr, yr.length);
-        colorCell(tr, pt,  v => (v>=0?"+":"") + v.toFixed(1));
-        colorCell(tr, cum, v => (v>=0?"+":"") + v.toFixed(1));
+        colorCell(tr, pt, v => (v>=0?"+":"") + v.toFixed(1));
         rankCell(tr, parseFloat(avg), avg);
       }
 
       const tr = tbody.insertRow();
       tr.classList.add("total-row");
-      const totPt  = recs.reduce((s, r) => s + r.point, 0);
       const totAvg = totGames > 0 ? (totRankSum / totGames).toFixed(2) : "—";
       cell(tr, "Total", true);
       cell(tr, totGames);
-      colorCell(tr, totPt,  v => (v>=0?"+":"") + v.toFixed(1));
-      colorCell(tr, cum,    v => (v>=0?"+":"") + v.toFixed(1));
+      colorCell(tr, totPtSum, v => (v>=0?"+":"") + v.toFixed(1));
       rankCell(tr, parseFloat(totAvg), totAvg);
     }
 
@@ -324,7 +433,7 @@
         return;
       }
 
-      const avgOf  = p => rnkMap[p].sum / rnkMap[p].count;
+      const avgOf   = p => rnkMap[p].sum / rnkMap[p].count;
       const bestPt  = qualified.reduce((b, p) => ptMap[p]  > ptMap[b]  ? p : b);
       const worstPt = qualified.reduce((b, p) => ptMap[p]  < ptMap[b]  ? p : b);
       const bestRnk  = qualified.reduce((b, p) => avgOf(p) < avgOf(b)  ? p : b);
@@ -334,10 +443,10 @@
       const fmtRnk = p => `平均着順 ${avgOf(p).toFixed(2)}（${rnkMap[p].count}対局）`;
 
       const cards = [
-        { label:"得意（得点）",  name: bestPt,  detail: fmtPt(bestPt),   cls:"pos" },
-        { label:"得意（着順）",  name: bestRnk, detail: fmtRnk(bestRnk), cls:"pos" },
-        { label:"苦手（得点）",  name: worstPt, detail: fmtPt(worstPt),  cls:"neg" },
-        { label:"苦手（着順）",  name: worstRnk,detail: fmtRnk(worstRnk),cls:"neg" },
+        { label:"得意（得点）",  name: bestPt,   detail: fmtPt(bestPt),    cls:"pos" },
+        { label:"得意（着順）",  name: bestRnk,  detail: fmtRnk(bestRnk),  cls:"pos" },
+        { label:"苦手（得点）",  name: worstPt,  detail: fmtPt(worstPt),   cls:"neg" },
+        { label:"苦手（着順）",  name: worstRnk, detail: fmtRnk(worstRnk), cls:"neg" },
       ];
       for (const c of cards) {
         grid.innerHTML += `
@@ -361,7 +470,7 @@
       _chartRanks = new Chart(document.getElementById("chart-ranks"), {
         type: "pie",
         data: {
-          labels: ["1位","2位","3位","4位"],
+          labels: ["1着","2着","3着","4着"],
           datasets: [{
             data: [cnt[1], cnt[2], cnt[3], cnt[4]],
             backgroundColor: ["rgba(255,215,0,0.75)","rgba(192,192,192,0.75)","rgba(205,127,50,0.75)","rgba(119,119,119,0.75)"],
@@ -378,7 +487,7 @@
         },
       });
 
-      // Bar + Line: yearly + cumulative
+      // Bar + Line: yearly + cumulative — single y-axis (0 aligned)
       const years = YEAR_ORDER.filter(y => recs.some(r => r.year === y));
       let cum = 0;
       const yearlyPt = [], cumPt = [];
@@ -400,7 +509,7 @@
               backgroundColor: yearlyPt.map(v => v >= 0 ? "rgba(127,201,127,0.55)" : "rgba(248,128,112,0.55)"),
               borderColor:     yearlyPt.map(v => v >= 0 ? "#7fc97f" : "#f88070"),
               borderWidth: 1,
-              yAxisID: "y",
+              order: 2,
             },
             {
               type: "line",
@@ -412,7 +521,7 @@
               pointRadius: 4,
               pointHoverRadius: 6,
               borderWidth: 2,
-              yAxisID: "y2",
+              order: 1,
             },
           ],
         },
@@ -423,11 +532,9 @@
             legend: { labels: { color: "#ccc", boxWidth: 14 } },
           },
           scales: {
-            x:  { ticks: { color: "#aaa" }, grid: { color: "rgba(255,255,255,0.07)" } },
-            y:  { position: "left",  ticks: { color: "#aaa" }, grid: { color: "rgba(255,255,255,0.07)" },
-                  title: { display: true, text: "年度別", color: "#aaa" } },
-            y2: { position: "right", ticks: { color: "#4e79a7" }, grid: { display: false },
-                  title: { display: true, text: "累積", color: "#4e79a7" } },
+            x: { ticks: { color: "#aaa" }, grid: { color: "rgba(255,255,255,0.07)" } },
+            y: { ticks: { color: "#aaa" }, grid: { color: "rgba(255,255,255,0.07)" },
+                 beginAtZero: false },
           },
         },
       });
