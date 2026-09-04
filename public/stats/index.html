@@ -388,8 +388,9 @@
         td(row, year, true);
         for (const p of players) {
           const val = pointMap[year]?.[p];
-          td(row, val !== undefined ? val.toFixed(1) : "NaN");
+          const cell = td(row, val !== undefined ? val.toFixed(1) : "—");
           if (val !== undefined) {
+            cell.style.color = val > 0 ? "#7fc97f" : val < 0 ? "#f88070" : "";
             playerTotal[p] = (playerTotal[p] || 0) + val;
           }
         }
@@ -400,7 +401,10 @@
       td(totalRow, "Total", true);
       for (const p of players) {
         const v = playerTotal[p];
-        td(totalRow, v !== undefined ? v.toFixed(1) : "NaN");
+        const cell = td(totalRow, v !== undefined ? v.toFixed(1) : "—");
+        if (v !== undefined) {
+          cell.style.color = v > 0 ? "#7fc97f" : v < 0 ? "#f88070" : "";
+        }
       }
     }
 
@@ -444,7 +448,10 @@
         td(row, d[2]);
         td(row, d[3]);
         td(row, d[4]);
-        td(row, avg === Infinity ? "NaN" : avg.toFixed(2));
+        const avgCell = td(row, avg === Infinity ? "—" : avg.toFixed(2));
+        if (avg !== Infinity) {
+          avgCell.style.color = avg < 2.5 ? "#7fc97f" : avg > 2.5 ? "#f88070" : "";
+        }
       }
     }
 
@@ -457,6 +464,7 @@
       const cell = document.createElement(isHeader ? "th" : "td");
       cell.textContent = text;
       row.appendChild(cell);
+      return cell;
     }
     function showError(msg) {
       document.getElementById("loading").style.display = "none";
