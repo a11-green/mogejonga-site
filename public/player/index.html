@@ -286,7 +286,7 @@
       summaryEl.innerHTML = "";
       yearsEl.innerHTML   = "";
 
-      // Find years with a final where this player was in the top-4 Q+SF finalists
+      // Find years where this player was in the top-4 Q+SF (same as Stats page computeChampions)
       const myFinalYears = [];
       const years = YEAR_ORDER.filter(y => _allRecords.some(r => r.year === y));
 
@@ -294,44 +294,49 @@
         const qsf  = qsfMap[year] || {};
         const f    = fMap[year]   || {};
         const hasF = Object.keys(f).length > 0;
-        if (!hasF) continue;
 
-        // Top 4 Q+SF → finalists ranked by carryOver + F points
+        // Top 4 by Q+SF total
         const top4 = Object.entries(qsf)
           .sort((a, b) => b[1] - a[1])
           .slice(0, 4)
           .map(([n, qsfTotal]) => ({
-            name:      n,
-            carryOver: qsfTotal / 2,
-            fPoints:   f[n] || 0,
-            total:     qsfTotal / 2 + (f[n] || 0),
+            name:  n,
+            // For F years: carryOver + F points (matches Stats page).
+            // For non-F years (e.g. 2016): Q+SF total directly.
+            total: hasF ? qsfTotal / 2 + (f[n] || 0) : qsfTotal,
           }));
-        top4.sort((a, b) => b.total - a.total);
+
+        if (hasF) top4.sort((a, b) => b.total - a.total);
 
         const pos = top4.findIndex(fin => fin.name === name) + 1;
         if (pos > 0) {
-          myFinalYears.push({ year, pos, total: top4[pos - 1].total });
+          myFinalYears.push({ year, pos, total: top4[pos - 1].total, hasF });
         }
       }
+
+      // "決勝進出" counts only years with an actual F round
+      const finalCount = myFinalYears.filter(y => y.hasF).length;
 
       summaryEl.innerHTML = `
         <div class="stat-card">
           <div class="label">決勝進出</div>
-          <div class="value">${myFinalYears.length}<span style="font-size:0.55em;font-weight:normal;"> 回</span></div>
+          <div class="value">${finalCount}<span style="font-size:0.55em;font-weight:normal;"> 回</span></div>
         </div>`;
 
       if (!myFinalYears.length) {
-        yearsEl.innerHTML = '<p style="color:#888;">決勝進出なし</p>';
+        yearsEl.innerHTML = '<p style="color:#888;">上位入賞なし</p>';
         return;
       }
 
       const rankColors = ["rank-1","rank-2","rank-3","rank-4"];
-      for (const { year, pos, total } of myFinalYears) {
+      for (const { year, pos, total, hasF } of myFinalYears) {
         const rankCls = pos >= 1 && pos <= 4 ? rankColors[pos - 1] : "";
+        // Non-F years (e.g. 2016): label as "予選" to distinguish from proper finals
+        const subLabel = hasF ? "" : `<span style="font-size:0.65em;color:#888;margin-left:2px;">予選</span>`;
         yearsEl.innerHTML += `
           <div class="final-card">
             <div class="fc-year">${year}</div>
-            <div class="fc-rank ${rankCls}">${pos}着</div>
+            <div class="fc-rank ${rankCls}">${pos}着${subLabel}</div>
             <div class="fc-pt">${total >= 0 ? "+" : ""}${total.toFixed(1)}</div>
           </div>`;
       }
