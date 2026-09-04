@@ -266,49 +266,73 @@
       buildCharts(recs);
     }
 
-    // ── Finals section (always F+A, unaffected by filter) ────────────────────
+    // ── Finals section (same logic as Stats computeChampions, unaffected by filter) ──
     function buildFinalsSection(name) {
-      // All F records where player was in A卓
-      const fRecs = _allRecords.filter(r => r.status === "F" && r.groups === "A");
-      const years = YEAR_ORDER.filter(y => fRecs.some(r => r.year === y));
+      // Build Q+SF and F totals per year/player (same as Stats page computeChampions)
+      const qsfMap = {};
+      const fMap   = {};
+      for (const r of _allRecords) {
+        if (r.status === "Q" || r.status === "SF") {
+          if (!qsfMap[r.year]) qsfMap[r.year] = {};
+          qsfMap[r.year][r.name] = (qsfMap[r.year][r.name] || 0) + r.point;
+        } else if (r.status === "F") {
+          if (!fMap[r.year]) fMap[r.year] = {};
+          fMap[r.year][r.name] = (fMap[r.year][r.name] || 0) + r.point;
+        }
+      }
 
       const summaryEl = document.getElementById("cards-finals-summary");
       const yearsEl   = document.getElementById("cards-finals-years");
       summaryEl.innerHTML = "";
       yearsEl.innerHTML   = "";
 
-      // Count years this player reached the final
-      const myYears = years.filter(y => fRecs.some(r => r.year === y && r.name === name));
+      // Find years with a final where this player was in the top-4 Q+SF finalists
+      const myFinalYears = [];
+      const years = YEAR_ORDER.filter(y => _allRecords.some(r => r.year === y));
+
+      for (const year of years) {
+        const qsf  = qsfMap[year] || {};
+        const f    = fMap[year]   || {};
+        const hasF = Object.keys(f).length > 0;
+        if (!hasF) continue;
+
+        // Top 4 Q+SF → finalists ranked by carryOver + F points
+        const top4 = Object.entries(qsf)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 4)
+          .map(([n, qsfTotal]) => ({
+            name:      n,
+            carryOver: qsfTotal / 2,
+            fPoints:   f[n] || 0,
+            total:     qsfTotal / 2 + (f[n] || 0),
+          }));
+        top4.sort((a, b) => b.total - a.total);
+
+        const pos = top4.findIndex(fin => fin.name === name) + 1;
+        if (pos > 0) {
+          myFinalYears.push({ year, pos, total: top4[pos - 1].total });
+        }
+      }
 
       summaryEl.innerHTML = `
         <div class="stat-card">
           <div class="label">決勝進出</div>
-          <div class="value">${myYears.length}<span style="font-size:0.55em;font-weight:normal;"> 回</span></div>
+          <div class="value">${myFinalYears.length}<span style="font-size:0.55em;font-weight:normal;"> 回</span></div>
         </div>`;
 
-      if (!myYears.length) {
+      if (!myFinalYears.length) {
         yearsEl.innerHTML = '<p style="color:#888;">決勝進出なし</p>';
         return;
       }
 
-      for (const year of myYears) {
-        const yr = fRecs.filter(r => r.year === year);
-
-        // Sum F+A points per player, rank descending
-        const ptSum = {};
-        for (const r of yr) ptSum[r.name] = (ptSum[r.name] || 0) + r.point;
-        const sorted = Object.entries(ptSum).sort((a, b) => b[1] - a[1]);
-        const pos    = sorted.findIndex(([n]) => n === name) + 1;
-        const myPt   = ptSum[name];
-
-        const rankColors = ["rank-1","rank-2","rank-3","rank-4"];
-        const rankCls = pos >= 1 && pos <= 4 ? rankColors[pos-1] : "";
-
+      const rankColors = ["rank-1","rank-2","rank-3","rank-4"];
+      for (const { year, pos, total } of myFinalYears) {
+        const rankCls = pos >= 1 && pos <= 4 ? rankColors[pos - 1] : "";
         yearsEl.innerHTML += `
           <div class="final-card">
             <div class="fc-year">${year}</div>
-            <div class="fc-rank ${rankCls}">${pos > 0 ? pos + "着" : "—"}</div>
-            <div class="fc-pt">${myPt !== undefined ? (myPt>=0?"+":"") + myPt.toFixed(1) : "—"}</div>
+            <div class="fc-rank ${rankCls}">${pos}着</div>
+            <div class="fc-pt">${total >= 0 ? "+" : ""}${total.toFixed(1)}</div>
           </div>`;
       }
     }
