@@ -109,7 +109,7 @@ async function main() {
   const version = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
   const versionRe = /const CACHE_VERSION = "[^"]*";/g;
 
-  for (const relPath of ["../../public/stats/index.html", "../../public/player/index.html"]) {
+  for (const relPath of ["../../public/stats/index.html", "../../public/player/index.html", "../../public/ranking/index.html"]) {
     const filePath = path.join(__dirname, relPath);
     if (!fs.existsSync(filePath)) continue;
     const updated = fs.readFileSync(filePath, "utf-8").replace(versionRe, `const CACHE_VERSION = "${version}";`);
