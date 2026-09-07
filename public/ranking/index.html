@@ -183,15 +183,25 @@
       const champWins = {}, finalApps = {};
       for (const year of YEAR_ORDER) {
         const qsf = qsfMap[year] || {}, f = fMap[year] || {};
-        if (!Object.keys(f).length) continue;
-        const top4 = Object.entries(qsf)
-          .sort((a, b) => b[1] - a[1]).slice(0, 4)
-          .map(([n, q]) => [n, q / 2 + (f[n] || 0)])
-          .sort((a, b) => b[1] - a[1]);
-        for (let i = 0; i < top4.length; i++) {
-          const n = top4[i][0];
-          finalApps[n] = (finalApps[n] || 0) + 1;
-          if (i === 0) champWins[n] = (champWins[n] || 0) + 1;
+        const hasF = Object.keys(f).length > 0;
+
+        const top4QSF = Object.entries(qsf).sort((a, b) => b[1] - a[1]).slice(0, 4);
+        if (!top4QSF.length) continue;
+
+        if (hasF) {
+          // Years with finals: rank by carryOver + F points, count finals appearances
+          const top4 = top4QSF
+            .map(([n, q]) => [n, q / 2 + (f[n] || 0)])
+            .sort((a, b) => b[1] - a[1]);
+          for (let i = 0; i < top4.length; i++) {
+            const n = top4[i][0];
+            finalApps[n] = (finalApps[n] || 0) + 1;
+            if (i === 0) champWins[n] = (champWins[n] || 0) + 1;
+          }
+        } else {
+          // Years without finals (e.g. 2016): Q+SF top player is champion
+          champWins[top4QSF[0][0]] = (champWins[top4QSF[0][0]] || 0) + 1;
+          // 決勝進出 is not counted for non-F years
         }
       }
 
