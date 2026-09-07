@@ -138,9 +138,9 @@
       { key: "bestQSF",            title: "最高得点（予選合計）",note: "",        minGames: 0,  asc: false,
         fmt: (v, s) => ({ main: (v >= 0 ? "+" : "") + v.toFixed(1), sub: s.bestQSFYear, cls: "pos" }) },
       { key: "maxTopStreak",       title: "連続トップ",          note: "",        minGames: 0,  asc: false,
-        fmt: (v)    => ({ main: v + " 連続", sub: "",           cls: "" }) },
+        fmt: (v, s) => ({ main: v + " 連続", sub: s.maxTopStreakSub,      cls: "" }) },
       { key: "maxLasAvoidStreak",  title: "連続ラス回避",        note: "",        minGames: 0,  asc: false,
-        fmt: (v)    => ({ main: v + " 連続", sub: "",           cls: "" }) },
+        fmt: (v, s) => ({ main: v + " 連続", sub: s.maxLasAvoidStreakSub, cls: "" }) },
     ];
 
     // ── Compute stats ──────────────────────────────────────────────────────────
@@ -234,16 +234,24 @@
           if (v > bestQSF) { bestQSF = v; bestQSFYear = y; }
         }
 
-        // Streaks (records are sorted chronologically)
-        let maxTop = 0, curTop = 0, maxLas = 0, curLas = 0;
+        // Streaks with period tracking (records are sorted chronologically)
+        let maxTop = 0, curTop = 0, curTopStart = null, topStart = null, topEnd = null;
+        let maxLas = 0, curLas = 0, curLasStart = null, lasStart = null, lasEnd = null;
         for (const r of recs) {
           const rk = Math.round(r.rank);
-          if (rk === 1) { curTop++; if (curTop > maxTop) maxTop = curTop; }
-          else curTop = 0;
-          if (rk !== 4) { curLas++; if (curLas > maxLas) maxLas = curLas; }
-          else curLas = 0;
+          if (rk === 1) {
+            if (curTop === 0) curTopStart = r;
+            curTop++;
+            if (curTop > maxTop) { maxTop = curTop; topStart = curTopStart; topEnd = r; }
+          } else { curTop = 0; curTopStart = null; }
+          if (rk !== 4) {
+            if (curLas === 0) curLasStart = r;
+            curLas++;
+            if (curLas > maxLas) { maxLas = curLas; lasStart = curLasStart; lasEnd = r; }
+          } else { curLas = 0; curLasStart = null; }
         }
 
+        const fmtR = r => r ? `${r.year} G${r.game}` : "";
         const maxPtSub = maxPtRec
           ? `${maxPtRec.year} Game${maxPtRec.game} (${maxPtRec.status})`
           : "";
@@ -253,7 +261,9 @@
           maxPt, maxPtSub,
           bestQSF, bestQSFYear,
           maxTopStreak: maxTop,
+          maxTopStreakSub:      topStart && topEnd ? `${fmtR(topStart)} 〜 ${fmtR(topEnd)}` : "",
           maxLasAvoidStreak: maxLas,
+          maxLasAvoidStreakSub: lasStart && lasEnd ? `${fmtR(lasStart)} 〜 ${fmtR(lasEnd)}` : "",
           champWins:  champWins[name]  || 0,
           finalApps:  finalApps[name]  || 0,
         };
@@ -262,26 +272,20 @@
     }
 
     // ── Render ─────────────────────────────────────────────────────────────────
+    // Always returns exactly up to 3 entries. Rank label reflects ties:
+    // e.g. [100,100,80] → [1st,1st,3rd], [100,90,90] → [1st,2nd,2nd]
     function top3(stats, category) {
       const { key, minGames, asc } = category;
       const entries = Object.entries(stats)
         .filter(([, s]) => s.games >= minGames && s[key] !== undefined && s[key] !== null);
       entries.sort(([, a], [, b]) => asc ? a[key] - b[key] : b[key] - a[key]);
 
-      const medalLabels = ["1st","2nd","3rd"];
-      const medalCls    = ["medal-1","medal-2","medal-3"];
-      const result = [];
-      let curRank = 0, curVal = null, shown = 0;
-
-      for (const [name, s] of entries) {
+      return entries.slice(0, 3).map(([name, s]) => {
         const v = s[key];
-        if (v !== curVal) { curRank++; curVal = v; }
-        if (curRank > 3) break;
-        result.push({ rank: curRank, name, val: v, stats: s });
-        shown++;
-        if (shown >= 6) break; // safety cap
-      }
-      return result;
+        // rank = number of entries with a strictly better value + 1
+        const rank = entries.filter(([, e]) => asc ? e[key] < v : e[key] > v).length + 1;
+        return { rank, name, val: v, stats: s };
+      });
     }
 
     function buildCard(category, stats) {
