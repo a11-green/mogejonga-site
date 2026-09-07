@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>mogejonga - Ranking</title>
+  <link rel="stylesheet" href="../css/layout.css">
+  <style>
+    .loading { padding: 20px; font-size: 1.2em; color: #ccc; }
+    .error   { padding: 20px; color: #f88; }
+
+    .ranking-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .ranking-card {
+      background: rgba(255,255,255,0.07);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      background: rgba(255,255,255,0.1);
+      padding: 10px 14px;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .card-title {
+      font-weight: bold;
+      font-size: 0.9em;
+      color: #eee;
+      flex: 1;
+    }
+    .card-note {
+      font-size: 0.7em;
+      color: #888;
+    }
+
+    .rank-entry {
+      display: flex;
+      align-items: center;
+      padding: 8px 14px;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .rank-entry:last-child { border-bottom: none; }
+
+    .medal {
+      font-size: 0.75em;
+      font-weight: bold;
+      min-width: 30px;
+      text-align: center;
+      padding: 2px 5px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .medal-1 { color: #1a1a0a; background: #ffd700; }
+    .medal-2 { color: #111;    background: #c0c0c0; }
+    .medal-3 { color: #1a0d00; background: #cd7f32; }
+    .medal-n { color: #999;    background: rgba(255,255,255,0.1); }
+
+    .entry-name { flex: 1; font-size: 0.95em; }
+
+    .entry-val { text-align: right; }
+    .val-main { font-weight: bold; font-size: 1.05em; }
+    .val-sub  { display: block; font-size: 0.7em; color: #888; }
+
+    .pos { color: #7fc97f; }
+    .neg { color: #f88070; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <header>
+      <ul class="header-list">
+        <li><a href="../index.html"            class="link-to">Home</a></li>
+        <li><a href="../data/index.html"       class="link-to">Data</a></li>
+        <li><a href="../stats/index.html"      class="link-to">Stats</a></li>
+        <li><a href="./index.html"             class="link-now">Ranking</a></li>
+        <li><a href="../player/index.html"     class="link-to">Player</a></li>
+        <li><a href="../regulation/index.html" class="link-to">Regulation</a></li>
+      </ul>
+    </header>
+  </div>
+
+  <div class="contents">
+    <h1>Ranking</h1>
+    <div id="loading" class="loading">データを読み込み中...</div>
+    <div id="error"   class="error" style="display:none;"></div>
+    <div id="ranking-grid" class="ranking-grid" style="display:none;"></div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey:            "AIzaSyAmCR3LPPTbwaGaZklCyvNpX-1ZrqN9dGg",
+      authDomain:        "mogejonga-site.firebaseapp.com",
+      projectId:         "mogejonga-site",
+      storageBucket:     "mogejonga-site.firebasestorage.app",
+      messagingSenderId: "544731021968",
+      appId:             "1:544731021968:web:548739d70cf3c790c8ce15",
+    };
+
+    const CACHE_VERSION = "20000101000000"; // auto-updated by addCSV.js
+    const CACHE_KEY     = "gameResult_v" + CACHE_VERSION;
+
+    const YEAR_ORDER = [
+      "2016","2017","2018","2019","2020","2021",
+      "202205","202212","2023","202406","202412","2025",
+    ];
+    const YEAR_IDX = Object.fromEntries(YEAR_ORDER.map((y, i) => [y, i]));
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // ── Ranking categories ─────────────────────────────────────────────────────
+    const CATEGORIES = [
+      { key: "champWins",          title: "優勝回数",            note: "",        minGames: 0,  asc: false,
+        fmt: (v)    => ({ main: v + " 回",  sub: "",            cls: "" }) },
+      { key: "finalApps",          title: "決勝進出回数",        note: "",        minGames: 0,  asc: false,
+        fmt: (v)    => ({ main: v + " 回",  sub: "",            cls: "" }) },
+      { key: "topRate",            title: "トップ率",            note: "50局以上", minGames: 50, asc: false,
+        fmt: (v)    => ({ main: v.toFixed(1) + "%", sub: "",    cls: v >= 25 ? "pos" : "" }) },
+      { key: "avgRank",            title: "平均着順",            note: "50局以上", minGames: 50, asc: true,
+        fmt: (v)    => ({ main: v.toFixed(2),        sub: "",   cls: v < 2.5 ? "pos" : "neg" }) },
+      { key: "rentai",             title: "連帯率",              note: "50局以上", minGames: 50, asc: false,
+        fmt: (v)    => ({ main: v.toFixed(1) + "%", sub: "",    cls: v >= 50 ? "pos" : "neg" }) },
+      { key: "lasAvoid",           title: "ラス回避率",          note: "50局以上", minGames: 50, asc: false,
+        fmt: (v)    => ({ main: v.toFixed(1) + "%", sub: "",    cls: v >= 75 ? "pos" : "" }) },
+      { key: "games",              title: "打数",                note: "",        minGames: 0,  asc: false,
+        fmt: (v)    => ({ main: v + " 局",  sub: "",            cls: "" }) },
+      { key: "maxPt",              title: "最高得点（1半荘）",   note: "",        minGames: 0,  asc: false,
+        fmt: (v, s) => ({ main: (v >= 0 ? "+" : "") + v.toFixed(1), sub: s.maxPtSub,    cls: "pos" }) },
+      { key: "bestQSF",            title: "最高得点（予選合計）",note: "",        minGames: 0,  asc: false,
+        fmt: (v, s) => ({ main: (v >= 0 ? "+" : "") + v.toFixed(1), sub: s.bestQSFYear, cls: "pos" }) },
+      { key: "maxTopStreak",       title: "連続トップ",          note: "",        minGames: 0,  asc: false,
+        fmt: (v, s) => ({ main: v + " 連続", sub: s.maxTopStreakSub,      cls: "" }) },
+      { key: "maxLasAvoidStreak",  title: "連続ラス回避",        note: "",        minGames: 0,  asc: false,
+        fmt: (v, s) => ({ main: v + " 連続", sub: s.maxLasAvoidStreakSub, cls: "" }) },
+    ];
+
+    // ── Compute stats ──────────────────────────────────────────────────────────
+    function computeStats(allRecords) {
+      // Compute rank per (year, game, groups) from stored rank field
+      // Build per-player sorted record list
+      const playerRecs = {};
+      for (const r of allRecords) {
+        if (!playerRecs[r.name]) playerRecs[r.name] = [];
+        playerRecs[r.name].push(r);
+      }
+      for (const recs of Object.values(playerRecs)) {
+        recs.sort((a, b) => {
+          const yi = (YEAR_IDX[a.year] ?? 99) - (YEAR_IDX[b.year] ?? 99);
+          if (yi !== 0) return yi;
+          if (a.game !== b.game) return a.game - b.game;
+          return a.groups.localeCompare(b.groups);
+        });
+      }
+
+      // Q+SF totals per (player, year) for bestQSF
+      const qsfYear = {};
+      for (const r of allRecords) {
+        if (r.status !== "Q" && r.status !== "SF") continue;
+        if (!qsfYear[r.name]) qsfYear[r.name] = {};
+        qsfYear[r.name][r.year] = (qsfYear[r.name][r.year] || 0) + r.point;
+      }
+
+      // Champion / finals from computeChampions logic
+      const qsfMap = {}, fMap = {};
+      for (const r of allRecords) {
+        if (r.status === "Q" || r.status === "SF") {
+          if (!qsfMap[r.year]) qsfMap[r.year] = {};
+          qsfMap[r.year][r.name] = (qsfMap[r.year][r.name] || 0) + r.point;
+        } else if (r.status === "F") {
+          if (!fMap[r.year]) fMap[r.year] = {};
+          fMap[r.year][r.name] = (fMap[r.year][r.name] || 0) + r.point;
+        }
+      }
+      const champWins = {}, finalApps = {};
+      for (const year of YEAR_ORDER) {
+        const qsf = qsfMap[year] || {}, f = fMap[year] || {};
+        const hasF = Object.keys(f).length > 0;
+
+        const top4QSF = Object.entries(qsf).sort((a, b) => b[1] - a[1]).slice(0, 4);
+        if (!top4QSF.length) continue;
+
+        if (hasF) {
+          // Years with finals: rank by carryOver + F points, count finals appearances
+          const top4 = top4QSF
+            .map(([n, q]) => [n, q / 2 + (f[n] || 0)])
+            .sort((a, b) => b[1] - a[1]);
+          for (let i = 0; i < top4.length; i++) {
+            const n = top4[i][0];
+            finalApps[n] = (finalApps[n] || 0) + 1;
+            if (i === 0) champWins[n] = (champWins[n] || 0) + 1;
+          }
+        } else {
+          // Years without finals (e.g. 2016): Q+SF top player is champion
+          champWins[top4QSF[0][0]] = (champWins[top4QSF[0][0]] || 0) + 1;
+          // 決勝進出 is not counted for non-F years
+        }
+      }
+
+      // Per-player stats
+      const stats = {};
+      for (const [name, recs] of Object.entries(playerRecs)) {
+        const games = recs.length;
+        let r1 = 0, r2 = 0, r3 = 0, r4 = 0;
+        let maxPt = -Infinity, maxPtRec = null;
+        let rankSum = 0;
+
+        for (const r of recs) {
+          const rk = Math.round(r.rank);
+          if (rk === 1) r1++; else if (rk === 2) r2++;
+          else if (rk === 3) r3++; else if (rk === 4) r4++;
+          rankSum += rk;
+          if (r.point > maxPt) { maxPt = r.point; maxPtRec = r; }
+        }
+
+        const avgRank = rankSum / games;
+        const topRate  = r1 / games * 100;
+        const rentai   = (r1 + r2) / games * 100;
+        const lasAvoid = (games - r4) / games * 100;
+
+        // bestQSF
+        const yearMap   = qsfYear[name] || {};
+        const yearEntries = Object.entries(yearMap);
+        let bestQSF = 0, bestQSFYear = "";
+        for (const [y, v] of yearEntries) {
+          if (v > bestQSF) { bestQSF = v; bestQSFYear = y; }
+        }
+
+        // Streaks with period tracking (records are sorted chronologically)
+        let maxTop = 0, curTop = 0, curTopStart = null, topStart = null, topEnd = null;
+        let maxLas = 0, curLas = 0, curLasStart = null, lasStart = null, lasEnd = null;
+        for (const r of recs) {
+          const rk = Math.round(r.rank);
+          if (rk === 1) {
+            if (curTop === 0) curTopStart = r;
+            curTop++;
+            if (curTop > maxTop) { maxTop = curTop; topStart = curTopStart; topEnd = r; }
+          } else { curTop = 0; curTopStart = null; }
+          if (rk !== 4) {
+            if (curLas === 0) curLasStart = r;
+            curLas++;
+            if (curLas > maxLas) { maxLas = curLas; lasStart = curLasStart; lasEnd = r; }
+          } else { curLas = 0; curLasStart = null; }
+        }
+
+        const fmtR = r => r ? `${r.year} G${r.game}` : "";
+        const maxPtSub = maxPtRec
+          ? `${maxPtRec.year} Game${maxPtRec.game} (${maxPtRec.status})`
+          : "";
+
+        stats[name] = {
+          games, avgRank, topRate, rentai, lasAvoid,
+          maxPt, maxPtSub,
+          bestQSF, bestQSFYear,
+          maxTopStreak: maxTop,
+          maxTopStreakSub:      topStart && topEnd ? `${fmtR(topStart)} 〜 ${fmtR(topEnd)}` : "",
+          maxLasAvoidStreak: maxLas,
+          maxLasAvoidStreakSub: lasStart && lasEnd ? `${fmtR(lasStart)} 〜 ${fmtR(lasEnd)}` : "",
+          champWins:  champWins[name]  || 0,
+          finalApps:  finalApps[name]  || 0,
+        };
+      }
+      return stats;
+    }
+
+    // ── Render ─────────────────────────────────────────────────────────────────
+    // Always returns exactly up to 3 entries. Rank label reflects ties:
+    // e.g. [100,100,80] → [1st,1st,3rd], [100,90,90] → [1st,2nd,2nd]
+    function top3(stats, category) {
+      const { key, minGames, asc } = category;
+      const entries = Object.entries(stats)
+        .filter(([, s]) => s.games >= minGames && s[key] !== undefined && s[key] !== null);
+      entries.sort(([, a], [, b]) => asc ? a[key] - b[key] : b[key] - a[key]);
+
+      return entries.slice(0, 3).map(([name, s]) => {
+        const v = s[key];
+        // rank = number of entries with a strictly better value + 1
+        const rank = entries.filter(([, e]) => asc ? e[key] < v : e[key] > v).length + 1;
+        return { rank, name, val: v, stats: s };
+      });
+    }
+
+    function buildCard(category, stats) {
+      const entries = top3(stats, category);
+      const medalLabels = ["1st","2nd","3rd","—"];
+      const medalCls    = ["medal-1","medal-2","medal-3","medal-n"];
+
+      let rows = "";
+      for (const { rank, name, val, stats: s } of entries) {
+        const { main, sub, cls } = category.fmt(val, s);
+        const mCls = medalCls[rank - 1] ?? "medal-n";
+        const mLbl = medalLabels[rank - 1] ?? "—";
+        rows += `
+          <div class="rank-entry">
+            <span class="medal ${mCls}">${mLbl}</span>
+            <span class="entry-name">${name}</span>
+            <div class="entry-val">
+              <span class="val-main ${cls}">${main}</span>
+              ${sub ? `<span class="val-sub">${sub}</span>` : ""}
+            </div>
+          </div>`;
+      }
+
+      if (!rows) {
+        rows = `<div class="rank-entry" style="color:#888; font-size:0.85em; padding:12px 14px;">データなし</div>`;
+      }
+
+      return `
+        <div class="ranking-card">
+          <div class="card-header">
+            <span class="card-title">${category.title}</span>
+            ${category.note ? `<span class="card-note">${category.note}</span>` : ""}
+          </div>
+          ${rows}
+        </div>`;
+    }
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+    async function init() {
+      try {
+        for (const key of Object.keys(localStorage)) {
+          if (key.startsWith("gameResult_v") && key !== CACHE_KEY) {
+            localStorage.removeItem(key);
+          }
+        }
+
+        let allRecords;
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          allRecords = JSON.parse(cached);
+        } else {
+          const snap = await db.collection("gameResult").get();
+          allRecords = snap.docs.map(d => d.data());
+          try { localStorage.setItem(CACHE_KEY, JSON.stringify(allRecords)); } catch(e) {}
+        }
+
+        const stats = computeStats(allRecords);
+
+        const grid = document.getElementById("ranking-grid");
+        grid.innerHTML = CATEGORIES.map(cat => buildCard(cat, stats)).join("");
+
+        document.getElementById("loading").style.display = "none";
+        grid.style.display = "grid";
+
+      } catch(err) {
+        document.getElementById("loading").style.display = "none";
+        const el = document.getElementById("error");
+        el.textContent = "Firestore取得エラー: " + err.message;
+        el.style.display = "block";
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
