@@ -2,689 +2,116 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>mogejonga 記録</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mogejonga — 記録</title>
+  <link rel="stylesheet" href="../css/layout.css">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif;
-      background: #1a1a2e;
-      color: #e0e0e0;
-      min-height: 100vh;
-      padding-bottom: 64px;
+    .record-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
     }
 
-    /* ── Setup ── */
-    #screen-setup { padding: 24px 16px; max-width: 480px; margin: 0 auto; }
-
-    .setup-title {
-      font-size: 1.6rem; font-weight: bold; text-align: center;
-      color: #ffd700; margin-bottom: 6px;
-    }
-    .setup-subtitle { text-align: center; color: #888; font-size: 0.85rem; margin-bottom: 24px; }
-
-    .field-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
-    .field-label { font-size: 0.85rem; color: #aaa; white-space: nowrap; }
-
-    .seat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-    .seat-wrap { display: flex; flex-direction: column; gap: 4px; }
-    .seat-label { font-size: 0.75rem; color: #aaa; }
-
-    input[type="text"], input[type="number"] {
-      background: #2a2a4a; border: 1px solid #444; border-radius: 8px;
-      color: #fff; font-size: 1rem; padding: 10px 12px; width: 100%;
-    }
-    input[type="text"]:focus, input[type="number"]:focus {
-      outline: none; border-color: #ffd700;
-    }
-    input[readonly] { color: #888; background: #1e1e36; }
-    .year-input { width: 120px; }
-
-    .btn-primary {
-      width: 100%; padding: 14px; background: #ffd700; color: #1a1a2e;
-      border: none; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer;
-    }
-    .btn-primary:disabled { background: #555; color: #888; cursor: not-allowed; }
-    .btn-secondary {
-      width: 100%; padding: 12px; background: transparent; color: #aaa;
-      border: 1px solid #444; border-radius: 10px; font-size: 1rem; cursor: pointer; margin-top: 10px;
-    }
-    .btn-danger {
-      width: 100%; padding: 12px; background: transparent; color: #ef5350;
-      border: 1px solid #ef5350; border-radius: 10px; font-size: 0.9rem; cursor: pointer;
-    }
-    .btn-export {
-      width: 100%; padding: 14px; background: #1565c0; color: #fff;
-      border: none; border-radius: 10px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 10px;
+    .record-title {
+      font-size: 1rem;
+      font-weight: bold;
+      color: rgba(255,200,50,0.9);
     }
 
-    /* ── Main ── */
-    #screen-main { display: none; }
-
-    .page-header {
-      background: #0f0f23; padding: 12px 16px; border-bottom: 1px solid #333;
-      display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50;
+    .btn-open {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px;
+      color: #ccc;
+      text-decoration: none;
+      font-size: 0.8rem;
+      white-space: nowrap;
     }
-    .page-header-title { font-size: 1rem; font-weight: bold; color: #ffd700; }
-    .page-header-year  { font-size: 0.8rem; color: #888; }
 
-    /* ── Tab bar ── */
-    #tab-bar {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      display: flex; background: #0f0f23; border-top: 1px solid #333; z-index: 100;
+    .btn-open:hover {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
     }
-    .tab-btn {
-      flex: 1; padding: 8px 0 6px; background: none; border: none; color: #666;
-      font-size: 0.65rem; cursor: pointer;
-      display: flex; flex-direction: column; align-items: center; gap: 2px;
+
+    .sheet-wrap {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
     }
-    .tab-btn.active { color: #ffd700; }
-    .tab-icon { font-size: 1.2rem; }
 
-    /* ── Tab panes ── */
-    .tab-pane { display: none; padding: 12px; max-width: 640px; margin: 0 auto; }
-    .tab-pane.active { display: block; }
-
-    /* ── 卓組 ── */
-    .schedule-wrap { overflow-x: auto; }
-    .schedule-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
-    .schedule-table th {
-      background: #2a2a4a; padding: 6px 3px; text-align: center; border: 1px solid #333;
+    /* push content below the site header */
+    .sheet-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      /* header height offset handled by padding-top on sheet-wrap */
     }
-    .schedule-table td { padding: 5px 3px; text-align: center; border: 1px solid #222; }
-    .schedule-table tr.row-done td { color: #555; }
-    .schedule-table tr.row-current td { background: rgba(255,215,0,0.1); }
-    .col-a { color: #4fc3f7; }
-    .col-b { color: #81c784; }
-    .col-bye { color: #888; font-size: 0.72rem; }
 
-    /* ── 入力 ── */
-    .game-nav {
-      display: flex; align-items: center; justify-content: space-between; padding: 6px 0 10px;
+    .sheet-frame {
+      width: 100%;
+      flex: 1;
+      border: none;
+      background: #fff;
     }
-    .nav-btn {
-      background: #2a2a4a; border: none; color: #fff;
-      padding: 8px 18px; border-radius: 8px; font-size: 1rem; cursor: pointer;
-    }
-    .nav-btn:disabled { color: #444; cursor: default; }
-    .game-title { font-size: 1.1rem; font-weight: bold; }
-
-    .game-dots { display: flex; gap: 3px; flex-wrap: wrap; padding: 6px 0 12px; }
-    .dot {
-      width: 22px; height: 22px; border-radius: 4px; background: #2a2a4a;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.6rem; cursor: pointer; color: #666;
-    }
-    .dot.done    { background: #2e7d32; color: #fff; }
-    .dot.current { background: #ffd700; color: #000; font-weight: bold; }
-
-    .table-section { background: #2a2a4a; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
-    .table-sec-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .table-sec-label { font-size: 0.85rem; font-weight: bold; }
-    .table-sec-label.a { color: #4fc3f7; }
-    .table-sec-label.b { color: #81c784; }
-    .table-sum { font-size: 0.9rem; font-weight: bold; }
-    .sum-ok { color: #81c784; }
-    .sum-ng { color: #ef5350; }
-
-    .player-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .player-wrap { display: flex; flex-direction: column; gap: 4px; }
-    .player-name { font-size: 0.75rem; color: #ccc; text-align: center; }
-    .score-input { text-align: center; font-size: 1.1rem; padding: 10px; }
-
-    .bye-row { text-align: center; padding: 8px; color: #888; font-size: 0.9rem; }
-
-    .confirm-btn {
-      width: 100%; padding: 14px; background: #ffd700; color: #1a1a2e;
-      border: none; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 4px;
-    }
-    .confirm-btn:disabled { background: #333; color: #666; cursor: not-allowed; }
-    .done-label { text-align: center; color: #81c784; font-size: 0.9rem; padding: 4px 0; }
-
-    /* ── 順位表 ── */
-    .standings-table { width: 100%; border-collapse: collapse; }
-    .standings-table th {
-      background: #2a2a4a; padding: 8px 6px; text-align: center; border-bottom: 2px solid #444;
-      font-size: 0.85rem;
-    }
-    .standings-table td { padding: 8px 6px; text-align: center; border-bottom: 1px solid #222; font-size: 0.9rem; }
-    .standings-table tr.finalist-row td { background: rgba(255,215,0,0.07); }
-    .finalist-badge {
-      display: inline-block; background: #ffd700; color: #000;
-      font-size: 0.55rem; padding: 1px 5px; border-radius: 4px; font-weight: bold; vertical-align: middle;
-    }
-    .games-played { font-size: 0.75rem; color: #888; }
-
-    /* ── 決勝 ── */
-    .card { background: #2a2a4a; border-radius: 12px; padding: 14px; margin-bottom: 14px; }
-    .card-title { font-size: 0.85rem; color: #aaa; margin-bottom: 10px; }
-    .carryover-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.9rem; }
-    .final-title { font-size: 1rem; font-weight: bold; color: #ffd700; margin-bottom: 10px; }
-    .final-sum { text-align: right; font-size: 0.85rem; margin-bottom: 8px; }
-    .final-result-row {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 6px 0; border-bottom: 1px solid #333; font-size: 0.88rem;
-    }
-    .final-result-row:last-child { border-bottom: none; }
-    .rank-num { font-size: 1.1rem; margin-right: 4px; }
-    .total-score { font-weight: bold; color: #ffd700; }
-
-    .empty-msg { padding: 40px 0; text-align: center; color: #888; font-size: 0.9rem; line-height: 1.8; }
   </style>
 </head>
 <body>
-
-<!-- ═══ Setup Screen ═══ -->
-<div id="screen-setup">
-  <div class="setup-title">🀄 大会記録</div>
-  <div class="setup-subtitle">座席番号1〜9に選手名を割り当ててください</div>
-
-  <div class="field-row">
-    <span class="field-label">年度</span>
-    <input type="text" id="setup-year" class="year-input" placeholder="2025" maxlength="6">
+  <!-- site nav -->
+  <div class="header">
+    <header>
+      <ul class="header-list">
+        <li><a href="../index.html"            class="link-to">Home</a></li>
+        <li><a href="../data/index.html"       class="link-to">Data</a></li>
+        <li><a href="../stats/index.html"      class="link-to">Stats</a></li>
+        <li><a href="../ranking/index.html"    class="link-to">Ranking</a></li>
+        <li><a href="../player/index.html"     class="link-to">Player</a></li>
+        <li><a href="./index.html"             class="link-now">Record</a></li>
+        <li><a href="../regulation/index.html" class="link-to">Regulation</a></li>
+      </ul>
+    </header>
   </div>
 
-  <div class="seat-grid" id="seat-grid"></div>
-
-  <button class="btn-primary" onclick="startTournament()">開始</button>
-  <button class="btn-secondary" id="btn-resume" style="display:none" onclick="resumeTournament()">
-    続きから再開
-  </button>
-</div>
-
-<!-- ═══ Main Screen ═══ -->
-<div id="screen-main">
-  <div class="page-header">
-    <span class="page-header-title">🀄 大会記録</span>
-    <span class="page-header-year" id="header-year"></span>
+  <!-- sub-header with open link -->
+  <div class="record-header">
+    <span class="record-title">当日成績表</span>
+    <a class="btn-open"
+       href="https://docs.google.com/spreadsheets/d/e/2PACX-1vSZ69WloYBrOHN0GNp1ykLBcCFT9QzoAopfbnDPBCKEuuwRhYdcLGWLqSRj_SM1rFW6LybmUm4pc35o/pubhtml"
+       target="_blank" rel="noopener">
+      ↗ 別タブで開く
+    </a>
   </div>
 
-  <!-- 卓組 -->
-  <div id="pane-schedule" class="tab-pane active">
-    <div class="schedule-wrap">
-      <table class="schedule-table" id="schedule-table"></table>
-    </div>
-  </div>
+  <!-- spreadsheet embed -->
+  <iframe
+    class="sheet-frame"
+    src="https://docs.google.com/spreadsheets/d/e/2PACX-1vSZ69WloYBrOHN0GNp1ykLBcCFT9QzoAopfbnDPBCKEuuwRhYdcLGWLqSRj_SM1rFW6LybmUm4pc35o/pubhtml?widget=false&headers=false"
+    title="当日成績表"
+    loading="lazy"
+    sandbox="allow-scripts allow-same-origin allow-popups">
+  </iframe>
 
-  <!-- 入力 -->
-  <div id="pane-input" class="tab-pane">
-    <div class="game-nav">
-      <button class="nav-btn" id="btn-prev" onclick="goGame(-1)">◀</button>
-      <span class="game-title" id="game-nav-title">ゲーム 1 / 18</span>
-      <button class="nav-btn" id="btn-next" onclick="goGame(1)">▶</button>
-    </div>
-    <div class="game-dots" id="game-dots"></div>
-    <div id="input-body"></div>
-  </div>
-
-  <!-- 順位表 -->
-  <div id="pane-standings" class="tab-pane">
-    <div id="standings-body"></div>
-  </div>
-
-  <!-- 決勝 -->
-  <div id="pane-finals" class="tab-pane">
-    <div id="finals-body"></div>
-  </div>
-
-  <!-- Tab bar -->
-  <nav id="tab-bar">
-    <button class="tab-btn active" id="tbtn-schedule" onclick="switchTab('schedule')">
-      <span class="tab-icon">📋</span>卓組
-    </button>
-    <button class="tab-btn" id="tbtn-input" onclick="switchTab('input')">
-      <span class="tab-icon">✏️</span>入力
-    </button>
-    <button class="tab-btn" id="tbtn-standings" onclick="switchTab('standings')">
-      <span class="tab-icon">📊</span>順位表
-    </button>
-    <button class="tab-btn" id="tbtn-finals" onclick="switchTab('finals')">
-      <span class="tab-icon">⚔️</span>決勝
-    </button>
-  </nav>
-</div>
-
-<script>
-// ── Schedule (1-indexed seats, repeated front/back halves) ──
-const SCHED_RAW = [
-  {a:[1,2,3,4],b:[5,6,7,8],bye:9},
-  {a:[1,2,5,6],b:[3,4,7,9],bye:8},
-  {a:[1,2,8,9],b:[3,4,5,6],bye:7},
-  {a:[1,4,5,9],b:[2,3,7,8],bye:6},
-  {a:[1,4,7,8],b:[2,3,6,9],bye:5},
-  {a:[1,3,6,8],b:[2,5,7,9],bye:4},
-  {a:[1,6,7,9],b:[2,4,5,8],bye:3},
-  {a:[1,3,5,7],b:[4,6,8,9],bye:2},
-  {a:[2,4,6,7],b:[3,5,8,9],bye:1},
-  {a:[1,2,3,4],b:[5,6,7,8],bye:9},
-  {a:[1,2,5,6],b:[3,4,7,9],bye:8},
-  {a:[1,2,8,9],b:[3,4,5,6],bye:7},
-  {a:[1,4,5,9],b:[2,3,7,8],bye:6},
-  {a:[1,4,7,8],b:[2,3,6,9],bye:5},
-  {a:[1,3,6,8],b:[2,5,7,9],bye:4},
-  {a:[1,6,7,9],b:[2,4,5,8],bye:3},
-  {a:[1,3,5,7],b:[4,6,8,9],bye:2},
-  {a:[2,4,6,7],b:[3,5,8,9],bye:1},
-];
-// Convert to 0-indexed player indices
-const SCHED = SCHED_RAW.map(g => ({
-  a: g.a.map(n => n-1),
-  b: g.b.map(n => n-1),
-  bye: g.bye - 1,
-}));
-
-const STORAGE_KEY = 'mogejonga_record';
-let state = null;
-let viewGame = 0; // which game is visible in input tab
-
-function blankState() {
-  return {
-    year: '',
-    players: Array(9).fill(''),
-    scores:  Array(9).fill(null).map(() => Array(18).fill(null)),
-    finals:  Array(9).fill(null).map(() => [null, null]),
-    confirmed: Array(18).fill(false),
-  };
-}
-
-const save  = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-const load  = () => { const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : null; };
-const clear = () => localStorage.removeItem(STORAGE_KEY);
-
-// ── Setup ──────────────────────────────────────────────────
-function initSetup() {
-  const grid = document.getElementById('seat-grid');
-  grid.innerHTML = '';
-  for (let i = 0; i < 9; i++) {
-    grid.innerHTML += `
-      <div class="seat-wrap">
-        <label class="seat-label">座席 ${i+1}</label>
-        <input type="text" class="seat-input" id="seat-${i}" placeholder="選手名" maxlength="10">
-      </div>`;
-  }
-  const existing = load();
-  if (existing) {
-    document.getElementById('btn-resume').style.display = 'block';
-    document.getElementById('setup-year').value = existing.year || '';
-    existing.players.forEach((p, i) => {
-      const el = document.getElementById(`seat-${i}`);
-      if (el) el.value = p;
-    });
-  }
-  if (!document.getElementById('setup-year').value) {
-    document.getElementById('setup-year').value = String(new Date().getFullYear());
-  }
-}
-
-function startTournament() {
-  const players = [];
-  for (let i = 0; i < 9; i++) {
-    const v = (document.getElementById(`seat-${i}`).value || '').trim();
-    if (!v) { alert(`座席${i+1}の選手名を入力してください`); return; }
-    players.push(v);
-  }
-  const year = (document.getElementById('setup-year').value || '').trim();
-  if (!year) { alert('年度を入力してください'); return; }
-  const existing = load();
-  if (existing && existing.confirmed && existing.confirmed.some(Boolean)) {
-    if (!confirm('入力中のデータがあります。上書きしますか？')) return;
-  }
-  state = blankState();
-  state.players = players;
-  state.year = year;
-  save();
-  enterMain();
-}
-
-function resumeTournament() {
-  state = load();
-  if (state) enterMain();
-}
-
-function enterMain() {
-  document.getElementById('screen-setup').style.display = 'none';
-  document.getElementById('screen-main').style.display = 'block';
-  document.getElementById('header-year').textContent = state.year + '年度';
-  // Find first unconfirmed game for input tab
-  const first = state.confirmed.findIndex(c => !c);
-  viewGame = first === -1 ? 17 : first;
-  renderSchedule();
-  renderInput();
-  renderStandings();
-  // Default to input tab
-  switchTab('input');
-}
-
-// ── Tab ────────────────────────────────────────────────────
-function switchTab(name) {
-  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(`pane-${name}`).classList.add('active');
-  document.getElementById(`tbtn-${name}`).classList.add('active');
-  if (name === 'schedule')  renderSchedule();
-  if (name === 'input')     renderInput();
-  if (name === 'standings') renderStandings();
-  if (name === 'finals')    renderFinals();
-}
-
-// ── 卓組 ───────────────────────────────────────────────────
-function renderSchedule() {
-  const firstUnconf = state.confirmed.findIndex(c => !c);
-  let html = `<thead><tr>
-    <th>G</th>
-    <th colspan="4" class="col-a">A卓</th>
-    <th colspan="4" class="col-b">B卓</th>
-    <th class="col-bye">抜</th>
-  </tr></thead><tbody>`;
-  SCHED.forEach((g, i) => {
-    const done = state.confirmed[i];
-    const cur  = i === firstUnconf;
-    const cls  = done ? 'row-done' : cur ? 'row-current' : '';
-    const aCells = g.a.map(p => `<td class="col-a">${state.players[p]}</td>`).join('');
-    const bCells = g.b.map(p => `<td class="col-b">${state.players[p]}</td>`).join('');
-    html += `<tr class="${cls}">
-      <td>${i+1}</td>${aCells}${bCells}
-      <td class="col-bye">${state.players[g.bye]}</td>
-    </tr>`;
-  });
-  document.getElementById('schedule-table').innerHTML = html + '</tbody>';
-}
-
-// ── 入力 ───────────────────────────────────────────────────
-function renderInput() {
-  const first = state.confirmed.findIndex(c => !c);
-  viewGame = first === -1 ? 17 : first;
-  renderInputGame(viewGame);
-}
-
-function renderInputGame(gi) {
-  viewGame = gi;
-  document.getElementById('game-nav-title').textContent = `ゲーム ${gi+1} / 18`;
-  document.getElementById('btn-prev').disabled = gi === 0;
-  document.getElementById('btn-next').disabled = gi === 17;
-
-  // Dots
-  const first = state.confirmed.findIndex(c => !c);
-  document.getElementById('game-dots').innerHTML = Array.from({length:18}, (_,i) => {
-    const cls = state.confirmed[i] ? 'done' : i === gi ? 'current' : i === first ? 'current' : '';
-    return `<div class="dot ${state.confirmed[i] ? 'done' : i===gi ? 'current' : ''}" onclick="renderInputGame(${i})">${i+1}</div>`;
-  }).join('');
-
-  const g = SCHED[gi];
-  const done = state.confirmed[gi];
-
-  const makeInputs = (players, tbl) => players.map(p => {
-    const v = state.scores[p][gi];
-    return `
-      <div class="player-wrap">
-        <div class="player-name">${state.players[p]}</div>
-        <input type="number" inputmode="decimal" step="0.1" class="score-input"
-          id="sc-${tbl}-${p}" value="${v !== null ? v : ''}"
-          ${done ? 'readonly' : ''}
-          oninput="onScore('${tbl}')">
-      </div>`;
-  }).join('');
-
-  const body = document.getElementById('input-body');
-  body.innerHTML = `
-    <div class="table-section">
-      <div class="table-sec-header">
-        <span class="table-sec-label a">A卓</span>
-        <span class="table-sum sum-ng" id="sum-a">合計: 0.0</span>
-      </div>
-      <div class="player-grid">${makeInputs(g.a,'a')}</div>
-    </div>
-    <div class="table-section">
-      <div class="table-sec-header">
-        <span class="table-sec-label b">B卓</span>
-        <span class="table-sum sum-ng" id="sum-b">合計: 0.0</span>
-      </div>
-      <div class="player-grid">${makeInputs(g.b,'b')}</div>
-    </div>
-    <div class="bye-row">抜け番: <strong>${state.players[g.bye]}</strong></div>
-    <button class="confirm-btn" id="confirm-btn" onclick="confirmGame(${gi})" disabled>
-      ${done ? '✓ 入力済み' : '確定'}
-    </button>
-    ${done ? `<button class="btn-secondary" style="margin-top:8px" onclick="undoGame(${gi})">修正する</button>` : ''}
-  `;
-
-  updateSum('a'); updateSum('b');
-  if (done) document.getElementById('confirm-btn').disabled = true;
-}
-
-function tableSum(tbl) {
-  const g = SCHED[viewGame];
-  const players = tbl === 'a' ? g.a : g.b;
-  let sum = 0, allFilled = true;
-  for (const p of players) {
-    const el = document.getElementById(`sc-${tbl}-${p}`);
-    if (!el || el.value.trim() === '') { allFilled = false; continue; }
-    const v = parseFloat(el.value);
-    if (isNaN(v)) { allFilled = false; continue; }
-    sum += v;
-  }
-  return { sum, allFilled };
-}
-
-function updateSum(tbl) {
-  const { sum, allFilled } = tableSum(tbl);
-  const el = document.getElementById(`sum-${tbl}`);
-  if (!el) return;
-  const ok = allFilled && Math.abs(sum) < 0.05;
-  el.textContent = `合計: ${sum.toFixed(1)}`;
-  el.className = `table-sum ${ok ? 'sum-ok' : 'sum-ng'}`;
-}
-
-function onScore(tbl) {
-  updateSum(tbl);
-  const { sum: sa, allFilled: fa } = tableSum('a');
-  const { sum: sb, allFilled: fb } = tableSum('b');
-  const btn = document.getElementById('confirm-btn');
-  if (btn) btn.disabled = !(fa && fb && Math.abs(sa)<0.05 && Math.abs(sb)<0.05);
-}
-
-function confirmGame(gi) {
-  const g = SCHED[gi];
-  g.a.forEach(p => { state.scores[p][gi] = parseFloat(document.getElementById(`sc-a-${p}`).value); });
-  g.b.forEach(p => { state.scores[p][gi] = parseFloat(document.getElementById(`sc-b-${p}`).value); });
-  state.scores[g.bye][gi] = null;
-  state.confirmed[gi] = true;
-  save();
-  const next = state.confirmed.findIndex((c, i) => !c && i > gi);
-  renderInputGame(next !== -1 ? next : gi);
-  renderSchedule();
-  renderStandings();
-}
-
-function undoGame(gi) {
-  state.confirmed[gi] = false;
-  save();
-  renderInputGame(gi);
-  renderSchedule();
-  renderStandings();
-}
-
-function goGame(dir) {
-  const ni = viewGame + dir;
-  if (ni < 0 || ni > 17) return;
-  renderInputGame(ni);
-}
-
-// ── 順位表 ─────────────────────────────────────────────────
-function computeStandings() {
-  return state.players.map((name, p) => {
-    let subtotal = 0, games = 0;
-    for (let i = 0; i < 18; i++) {
-      if (state.scores[p][i] !== null && state.confirmed[i]) {
-        subtotal += state.scores[p][i];
-        games++;
-      }
+  <script>
+    // Fill remaining viewport height below nav + sub-header
+    function resizeFrame() {
+      const nav    = document.querySelector('.header');
+      const subHdr = document.querySelector('.record-header');
+      const frame  = document.querySelector('.sheet-frame');
+      const used   = nav.offsetHeight + subHdr.offsetHeight;
+      frame.style.height = (window.innerHeight - used) + 'px';
     }
-    const carryover = subtotal / 2;
-    const f1 = state.finals[p][0];
-    const f2 = state.finals[p][1];
-    const total = carryover + (f1 ?? 0) + (f2 ?? 0);
-    return { name, p, subtotal, carryover, f1, f2, total, games };
-  }).sort((a, b) => b.subtotal - a.subtotal);
-}
-
-function renderStandings() {
-  const rows = computeStandings();
-  const allDone = state.confirmed.every(Boolean);
-  const medals = ['🥇','🥈','🥉'];
-  let html = `<table class="standings-table">
-    <thead><tr><th>#</th><th>名前</th><th>小計</th><th>持越</th><th class="games-played">局数</th></tr></thead>
-    <tbody>`;
-  rows.forEach((r, rank) => {
-    const fin = rank < 4;
-    const m = medals[rank] ?? (rank+1);
-    html += `<tr class="${fin ? 'finalist-row' : ''}">
-      <td>${m}</td>
-      <td>${r.name}${fin && allDone ? ' <span class="finalist-badge">決勝</span>' : ''}</td>
-      <td>${r.subtotal.toFixed(1)}</td>
-      <td>${r.carryover.toFixed(2)}</td>
-      <td class="games-played">${r.games}</td>
-    </tr>`;
-  });
-  document.getElementById('standings-body').innerHTML = html + '</tbody></table>';
-}
-
-// ── 決勝 ───────────────────────────────────────────────────
-function renderFinals() {
-  const allQDone = state.confirmed.every(Boolean);
-  if (!allQDone) {
-    document.getElementById('finals-body').innerHTML =
-      `<div class="empty-msg">予選全18戦を入力後に<br>決勝の入力が可能になります</div>
-       <button class="btn-danger" style="margin:16px 0" onclick="confirmAndClear()">🗑️ データをクリア</button>`;
-    return;
-  }
-
-  const standings = computeStandings();
-  const finalists = standings.slice(0, 4); // top-4 by subtotal
-
-  let html = `
-    <div class="card">
-      <div class="card-title">持越点（予選小計 × 0.5）</div>
-      ${finalists.map(r => `
-        <div class="carryover-row">
-          <span>${r.name}</span><span>${r.carryover.toFixed(2)}</span>
-        </div>`).join('')}
-    </div>`;
-
-  [1,2].forEach(fn => {
-    const inputs = finalists.map(r => `
-      <div class="player-wrap">
-        <div class="player-name">${r.name}</div>
-        <input type="number" inputmode="decimal" step="0.1" class="score-input"
-          id="f${fn}-${r.p}" value="${state.finals[r.p][fn-1] !== null ? state.finals[r.p][fn-1] : ''}"
-          oninput="onFinal(${fn},[${finalists.map(r=>r.p)}])">
-      </div>`).join('');
-    html += `
-      <div class="card">
-        <div class="final-title">決勝 ${fn}</div>
-        <div class="player-grid">${inputs}</div>
-        <div class="final-sum sum-ng" id="fsum-${fn}">合計: 0.0</div>
-        <button class="confirm-btn" id="fconf-${fn}" onclick="confirmFinal(${fn},[${finalists.map(r=>r.p)}])" disabled>確定</button>
-      </div>`;
-  });
-
-  // Final standings
-  const f1Done = finalists.every(r => state.finals[r.p][0] !== null);
-  const f2Done = finalists.every(r => state.finals[r.p][1] !== null);
-  if (f1Done && f2Done) {
-    const finals = finalists.map(r => ({
-      name: r.name, carryover: r.carryover,
-      f1: state.finals[r.p][0], f2: state.finals[r.p][1],
-      total: r.carryover + state.finals[r.p][0] + state.finals[r.p][1],
-    })).sort((a,b) => b.total - a.total);
-    const med = ['🥇','🥈','🥉','4位'];
-    html += `
-      <div class="card">
-        <div class="final-title">最終順位</div>
-        ${finals.map((r,i) => `
-          <div class="final-result-row">
-            <span><span class="rank-num">${med[i]}</span>${r.name}</span>
-            <span>持越 ${r.carryover.toFixed(2)} + ${r.f1} + ${r.f2} = <span class="total-score">${r.total.toFixed(2)}</span></span>
-          </div>`).join('')}
-      </div>
-      <button class="btn-export" onclick="exportCSV()">📥 CSVダウンロード</button>`;
-  }
-
-  html += `<button class="btn-danger" style="margin-top:8px" onclick="confirmAndClear()">🗑️ データをクリア（大会終了後）</button>`;
-  document.getElementById('finals-body').innerHTML = html;
-
-  [1,2].forEach(fn => updateFinalSum(fn, finalists.map(r=>r.p)));
-}
-
-function updateFinalSum(fn, playerIdxs) {
-  let sum = 0, allFilled = true;
-  for (const p of playerIdxs) {
-    const el = document.getElementById(`f${fn}-${p}`);
-    if (!el || el.value.trim() === '') { allFilled = false; continue; }
-    const v = parseFloat(el.value);
-    if (isNaN(v)) { allFilled = false; continue; }
-    sum += v;
-  }
-  const el = document.getElementById(`fsum-${fn}`);
-  if (!el) return;
-  const ok = allFilled && Math.abs(sum) < 0.05;
-  el.textContent = `合計: ${sum.toFixed(1)}`;
-  el.className = `final-sum ${ok ? 'sum-ok' : 'sum-ng'}`;
-  const btn = document.getElementById(`fconf-${fn}`);
-  if (btn) btn.disabled = !ok;
-}
-
-function onFinal(fn, playerIdxs) { updateFinalSum(fn, playerIdxs); }
-
-function confirmFinal(fn, playerIdxs) {
-  for (const p of playerIdxs) {
-    const el = document.getElementById(`f${fn}-${p}`);
-    if (el) state.finals[p][fn-1] = parseFloat(el.value);
-  }
-  save();
-  renderFinals();
-  renderStandings();
-}
-
-// ── CSV Export ─────────────────────────────────────────────
-function exportCSV() {
-  const y = state.year;
-  const rows = ['year,game,groups,status,name,point'];
-  SCHED.forEach((g, gi) => {
-    if (!state.confirmed[gi]) return;
-    g.a.forEach(p => {
-      const pt = state.scores[p][gi];
-      if (pt !== null) rows.push(`${y},${gi+1},A,Q,${state.players[p]},${pt}`);
-    });
-    g.b.forEach(p => {
-      const pt = state.scores[p][gi];
-      if (pt !== null) rows.push(`${y},${gi+1},B,Q,${state.players[p]},${pt}`);
-    });
-  });
-  const finalists = computeStandings().slice(0, 4);
-  finalists.forEach(r => {
-    if (state.finals[r.p][0] !== null) rows.push(`${y},1,A,F,${r.name},${state.finals[r.p][0]}`);
-    if (state.finals[r.p][1] !== null) rows.push(`${y},2,A,F,${r.name},${state.finals[r.p][1]}`);
-  });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([rows.join('\n')], {type:'text/csv'}));
-  a.download = `data${y}.csv`;
-  a.click();
-}
-
-// ── Clear ──────────────────────────────────────────────────
-function confirmAndClear() {
-  if (!confirm('全データをクリアします。よろしいですか？')) return;
-  clear();
-  state = null;
-  document.getElementById('screen-main').style.display = 'none';
-  document.getElementById('screen-setup').style.display = 'block';
-  initSetup();
-}
-
-// ── Init ───────────────────────────────────────────────────
-initSetup();
-</script>
+    resizeFrame();
+    window.addEventListener('resize', resizeFrame);
+  </script>
 </body>
 </html>
