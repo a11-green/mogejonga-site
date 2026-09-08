@@ -44,8 +44,15 @@
       text-align: left; background: rgba(255,255,255,.03);
       color: #888; min-width: 44px; position: sticky; left: 0;
     }
-    .raw-table tr.rt-names td { background: rgba(255,200,50,.12); color: rgba(255,200,50,.9); font-weight: bold; text-align: center; }
-    .raw-table tr.rt-names td.rt-a { color: #777; background: rgba(255,255,255,.03); }
+    .raw-table tr.rt-names td {
+      background: rgba(30,24,2,.97); color: rgba(255,200,50,.9);
+      font-weight: bold; text-align: center;
+      position: sticky; top: 0; z-index: 2;
+    }
+    .raw-table tr.rt-names td.rt-a {
+      color: #888; background: rgba(18,18,18,.97);
+      position: sticky; left: 0; top: 0; z-index: 3;
+    }
     .raw-table tr.rt-game:nth-child(even) td { background: rgba(255,255,255,.02); }
     .raw-table tr.rt-game:nth-child(even) td.rt-a { background: rgba(255,255,255,.04); }
     .raw-table tr.rt-summary td { background: rgba(79,195,247,.07); color: #90caf9; font-weight: bold; }
@@ -53,7 +60,12 @@
     .raw-table td.rt-pos { color: #a5d6a7; }
     .raw-table td.rt-neg { color: #ef9a9a; }
     .raw-table td.rt-zero { color: #555; }
-    .raw-table td.rt-check { color: #555; border-left: 2px solid rgba(255,255,255,.12); }
+    .raw-table td.rt-chk {
+      min-width: 36px; font-size: .72rem;
+      border-left: 2px solid rgba(255,255,255,.12); color: #555;
+    }
+    .raw-table td.rt-chk-ok { color: #81c784; }
+    .raw-table td.rt-chk-fail { color: #ef9a9a; font-weight: bold; }
 
     /* ── main content area ── */
     .rec-body { max-width: 960px; margin: 0 auto; padding: 12px 14px 40px; }
@@ -61,8 +73,8 @@
     /* ── panels row ── */
     .panels { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 14px; }
     .panel {
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.09);
+      background: rgba(0,0,0,.38);
+      border: 1px solid rgba(255,255,255,.14);
       border-radius: 10px; padding: 12px;
     }
     .panel-title { font-size: .75rem; color: #aaa; margin-bottom: 8px; letter-spacing: .04em; text-transform: uppercase; }
@@ -120,10 +132,13 @@
     /* ── chart ── */
     .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
     .chart-wrap {
-      background: rgba(255,255,255,.03);
-      border: 1px solid rgba(255,255,255,.07);
+      background: rgba(0,0,0,.38);
+      border: 1px solid rgba(255,255,255,.14);
       border-radius: 10px; padding: 12px;
     }
+    td.gap-pos { color: #a5d6a7; }
+    td.gap-neg { color: #ef9a9a; }
+    td.gap-zero { color: #888; }
     .status-bar { font-size: .78rem; color: #888; text-align: center; padding: 6px 0 0; }
     .status-bar.err { color: #ef5350; }
   </style>
@@ -147,7 +162,10 @@
 
 <!-- sub-header -->
 <div class="rec-subhdr">
-  <span class="rec-subhdr-title">当日成績表</span>
+  <div style="display:flex;align-items:baseline;gap:10px">
+    <span class="rec-subhdr-title">当日成績表</span>
+    <span id="sheet-title" style="font-size:.8rem;color:#bbb"></span>
+  </div>
   <div class="rec-subhdr-right">
     <button class="btn-sm" id="btn-refresh" onclick="loadAll()">↺ 更新</button>
     <a class="btn-sm"
@@ -179,7 +197,7 @@
     <table class="standings">
       <thead><tr>
         <th>#</th><th class="name-td" style="text-align:left">名前</th>
-        <th>小計</th><th>持越</th><th>決1</th><th>決2</th><th>合計</th>
+        <th>小計</th><th>持越</th><th>決1</th><th>決2</th><th>合計</th><th>差</th>
       </tr></thead>
       <tbody id="standings-body"></tbody>
     </table>
@@ -326,27 +344,58 @@ function completedGames(gameRows) {
   return count;
 }
 
-// ── Render: Raw sheet table (A1:K25) ──────────────────────────
+// ── Helpers ────────────────────────────────────────────────────
 function escHtml(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+function extractTitle(rows) {
+  for (let r = 0; r < Math.min(2, rows.length); r++) {
+    for (const cell of rows[r]) {
+      const v = cell.trim();
+      if (v.length > 2 && isNaN(Number(v))) return v;
+    }
+  }
+  return '';
+}
+
+// ── Render: Raw sheet table (A1:K25) ──────────────────────────
 function renderRawTable(rows) {
   const el = document.getElementById('raw-sheet-table');
   const SUMMARY = new Set(['小計','持越','決1','決2','合計']);
+
+  let foundNames = false, foundFirstGame = false;
   let html = '<table class="raw-table"><tbody>';
 
   for (const row of rows.slice(0, 25)) {
-    const cells = row.slice(0, 11); // A-K
+    const cells = row.slice(0, 10); // A-J; check columns computed below
     const colA  = (cells[0] ?? '').trim();
     const isGame    = /^\d+$/.test(colA) && +colA >= 1 && +colA <= 18;
     const isSummary = SUMMARY.has(colA);
     const isNames   = !isGame && !isSummary &&
                       cells.slice(1, 10).filter(c => c && isNaN(Number(c))).length >= 5;
 
+    if (isGame && colA === '1') foundFirstGame = true;
+    if (isNames) foundNames = true;
+
+    // 名前行と最初のゲーム行の間の行（座席番号行など）をスキップ
+    if (foundNames && !foundFirstGame && !isNames && !isGame && !isSummary) continue;
+
+    // A卓・B卓それぞれの合計チェックを計算
+    let checkA = '', checkB = '', checkACls = 'rt-chk', checkBCls = 'rt-chk';
+    if (isGame) {
+      const gi  = +colA - 1;
+      const sch = SCHEDULE[gi];
+      const num = seat => { const v = parseFloat(cells[seat] ?? ''); return isNaN(v) ? 0 : v; };
+      const sA  = sch.a.reduce((s, seat) => s + num(seat), 0);
+      const sB  = sch.b.reduce((s, seat) => s + num(seat), 0);
+      const fmt = n => Math.abs(n) < 0.01 ? '✓' : (n > 0 ? '+' : '') + n.toFixed(1);
+      checkA = fmt(sA); checkACls = 'rt-chk ' + (Math.abs(sA) < 0.01 ? 'rt-chk-ok' : 'rt-chk-fail');
+      checkB = fmt(sB); checkBCls = 'rt-chk ' + (Math.abs(sB) < 0.01 ? 'rt-chk-ok' : 'rt-chk-fail');
+    }
+
     const rowCls = isNames ? 'rt-names' : isSummary ? 'rt-summary' : isGame ? 'rt-game' : 'rt-other';
     html += `<tr class="${rowCls}">`;
-
     cells.forEach((cell, ci) => {
       const val = (cell ?? '').trim();
       let cls = ci === 0 ? 'rt-a' : '';
@@ -354,9 +403,10 @@ function renderRawTable(rows) {
         const n = parseFloat(val);
         if (!isNaN(n)) cls += n > 0 ? ' rt-pos' : n < 0 ? ' rt-neg' : ' rt-zero';
       }
-      if (ci === 10) cls += ' rt-check';
       html += `<td class="${cls.trim()}">${escHtml(val)}</td>`;
     });
+    html += `<td class="${checkACls}">${escHtml(checkA)}</td>`;
+    html += `<td class="${checkBCls}">${escHtml(checkB)}</td>`;
     html += '</tr>';
   }
 
@@ -433,10 +483,14 @@ function renderStandings(data) {
 
   const medals = ['🥇','🥈','🥉'];
   const fmt = v => v === null || v === undefined ? '—' : v.toFixed(1);
+  const fourth = rows.length >= 4 ? rows[3].tot : null;
 
   tbody.innerHTML = rows.map((r, i) => {
     const fin = i < 4;
     const med = medals[i] ?? (i + 1);
+    const gap = fourth !== null ? r.tot - fourth : null;
+    const gapStr = gap === null ? '' : (gap > 0.005 ? '+' : '') + gap.toFixed(2);
+    const gapCls = gap === null ? '' : Math.abs(gap) < 0.005 ? 'gap-zero' : gap > 0 ? 'gap-pos' : 'gap-neg';
     return `<tr class="${fin ? 'finalist-tr' : ''}">
       <td><span class="medal">${med}</span></td>
       <td class="name-td">${r.name}</td>
@@ -445,38 +499,40 @@ function renderStandings(data) {
       <td>${fmt(r.f1)}</td>
       <td>${fmt(r.f2)}</td>
       <td>${r.tot.toFixed(2)}</td>
+      <td class="${gapCls}">${gapStr}</td>
     </tr>`;
   }).join('');
 }
 
 // ── Render: Chart ──────────────────────────────────────────────
 function renderChart(data) {
-  // 実施済みゲームのみ使用
-  const done       = completedGames(data.gameRows);
-  const playedRows = data.gameRows.slice(0, done);
-  const playerCount = data.names.length;
-  const cumulative  = Array.from({length: playerCount}, () => [0]);
+  const TOTAL = 18;
+  const done  = completedGames(data.gameRows);
+  const labels = ['', ...Array.from({length: TOTAL}, (_, i) => `G${i + 1}`)];
 
-  for (const g of playedRows) {
-    for (let p = 0; p < playerCount; p++) {
-      const prev  = cumulative[p].at(-1);
-      const v     = g.cells[p];
-      const score = (v !== '' && !isNaN(Number(v))) ? parseFloat(v) : 0;
-      cumulative[p].push(prev + score);
+  const datasets = data.names.map((name, p) => {
+    let cumul = 0;
+    const points = [0];
+    for (let g = 0; g < TOTAL; g++) {
+      if (g < done) {
+        const v = data.gameRows[g]?.cells[p];
+        cumul += (v !== undefined && v !== '' && !isNaN(Number(v))) ? parseFloat(v) : 0;
+        points.push(cumul);
+      } else {
+        points.push(null);
+      }
     }
-  }
-
-  const gameCount = playedRows.length;
-  const labels    = ['', ...playedRows.map(g => `G${g.gameNum}`)];
-  const datasets  = data.names.map((name, i) => ({
-    label:           name,
-    data:            cumulative[i],
-    borderColor:     COLORS[i % COLORS.length],
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    pointRadius: gameCount <= 10 ? 3 : 2,
-    tension: 0.2,
-  }));
+    return {
+      label:           name,
+      data:            points,
+      borderColor:     COLORS[p % COLORS.length],
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      pointRadius: done <= 10 ? 3 : 2,
+      tension: 0,
+      spanGaps: false,
+    };
+  });
 
   if (chartInst) chartInst.destroy();
   chartInst = new Chart(document.getElementById('scoreChart'), {
@@ -515,6 +571,7 @@ async function loadAll() {
 
     if (!data) throw new Error('データ構造を認識できませんでした。シートの構成を確認してください。');
 
+    document.getElementById('sheet-title').textContent = extractTitle(rows);
     renderRawTable(rows);
     renderNextGame(data);
     renderStandings(data);
