@@ -7,258 +7,462 @@
   <link rel="stylesheet" href="../css/layout.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <style>
-    .record-subheader {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 16px;
+    /* ── sub-header ── */
+    .rec-subhdr {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 7px 14px;
       border-bottom: 1px solid rgba(255,255,255,0.08);
-      background: rgba(0,0,0,0.2);
+      background: rgba(0,0,0,0.25);
     }
-    .record-subheader-title {
-      font-size: 0.95rem;
-      font-weight: bold;
-      color: rgba(255,200,50,0.9);
+    .rec-subhdr-title { font-size: .9rem; font-weight: bold; color: rgba(255,200,50,.9); }
+    .rec-subhdr-right { display: flex; align-items: center; gap: 8px; }
+    .btn-sm {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 5px; color: #ccc; text-decoration: none;
+      font-size: .75rem; white-space: nowrap; cursor: pointer;
     }
-    .btn-ext {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 5px 11px;
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 6px;
-      color: #ccc;
-      text-decoration: none;
-      font-size: 0.78rem;
-      white-space: nowrap;
-    }
-    .btn-ext:hover { background: rgba(255,255,255,0.13); color: #fff; }
+    .btn-sm:hover { background: rgba(255,255,255,.13); color: #fff; }
+    .btn-sm:disabled { opacity: .4; cursor: default; }
 
     /* ── iframe ── */
-    .sheet-wrap {
-      width: 100%;
-      height: 420px;
-      overflow: hidden;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-    }
-    .sheet-wrap iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      background: #fff;
-    }
+    .sheet-wrap { width: 100%; height: 420px; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,.07); }
+    .sheet-wrap iframe { width: 100%; height: 100%; border: none; background: #fff; }
 
-    /* ── chart section ── */
-    .chart-section {
-      padding: 16px;
-      max-width: 960px;
-      margin: 0 auto;
-    }
-    .chart-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
-    }
-    .chart-title {
-      font-size: 1rem;
-      font-weight: bold;
-      color: rgba(255,200,50,0.85);
-    }
-    .btn-refresh {
-      padding: 5px 13px;
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 6px;
-      color: #ccc;
-      font-size: 0.8rem;
-      cursor: pointer;
-    }
-    .btn-refresh:hover { background: rgba(255,255,255,0.13); color: #fff; }
-    .btn-refresh:disabled { opacity: 0.4; cursor: default; }
+    /* ── main content area ── */
+    .rec-body { max-width: 960px; margin: 0 auto; padding: 12px 14px 40px; }
 
+    /* ── panels row ── */
+    .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+    @media (max-width: 560px) { .panels { grid-template-columns: 1fr; } .sheet-wrap { height: 300px; } }
+
+    .panel {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: 10px; padding: 12px;
+    }
+    .panel-title { font-size: .75rem; color: #aaa; margin-bottom: 8px; letter-spacing: .04em; text-transform: uppercase; }
+
+    /* 次の対局 */
+    .next-game-label {
+      font-size: .85rem; font-weight: bold; color: rgba(255,200,50,.9);
+      margin-bottom: 8px;
+    }
+    .table-group { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 5px; }
+    .tg-badge {
+      display: inline-block; font-size: .7rem; font-weight: bold;
+      padding: 2px 7px; border-radius: 4px; white-space: nowrap; margin-top: 1px;
+    }
+    .tg-badge.a { background: rgba(79,195,247,.2); color: #4fc3f7; border: 1px solid rgba(79,195,247,.3); }
+    .tg-badge.b { background: rgba(129,199,132,.2); color: #81c784; border: 1px solid rgba(129,199,132,.3); }
+    .tg-badge.bye { background: rgba(200,200,200,.1); color: #999; border: 1px solid rgba(200,200,200,.15); }
+    .tg-names { font-size: .88rem; line-height: 1.5; color: #ddd; }
+
+    /* 決勝出場ライン */
+    .finalist-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.06);
+      font-size: .88rem;
+    }
+    .finalist-row:last-child { border-bottom: none; }
+    .finalist-row.in-line { color: #ffd700; }
+    .finalist-row.border-line { color: #aaa; border-top: 1px dashed rgba(255,215,0,.3); margin-top: 4px; padding-top: 8px; }
+    .finalist-rank { font-weight: bold; width: 24px; flex-shrink: 0; }
+    .finalist-name { flex: 1; padding: 0 6px; }
+    .finalist-score { font-size: .82rem; color: #aaa; }
+    .finalist-row.in-line .finalist-score { color: rgba(255,215,0,.7); }
+
+    /* ── standings ── */
+    .section-title {
+      font-size: .8rem; font-weight: bold; color: #aaa;
+      letter-spacing: .06em; text-transform: uppercase;
+      margin-bottom: 8px; margin-top: 14px;
+    }
+    .standings-wrap { overflow-x: auto; }
+    table.standings {
+      width: 100%; border-collapse: collapse; font-size: .82rem; white-space: nowrap;
+    }
+    table.standings th {
+      background: rgba(255,255,255,.05); color: #aaa;
+      padding: 6px 8px; text-align: center; border-bottom: 1px solid rgba(255,255,255,.1);
+      font-weight: normal;
+    }
+    table.standings td { padding: 6px 8px; text-align: center; border-bottom: 1px solid rgba(255,255,255,.05); }
+    table.standings tr.finalist-tr td { color: #ffd700; }
+    table.standings tr.finalist-tr td.name-td { font-weight: bold; }
+    table.standings td.name-td { text-align: left; }
+    .medal { font-size: .95rem; }
+
+    /* ── chart ── */
+    .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
     .chart-wrap {
-      position: relative;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 10px;
-      padding: 12px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 10px; padding: 12px;
     }
-    .chart-status {
-      text-align: center;
-      font-size: 0.85rem;
-      color: #888;
-      padding: 10px 0 4px;
-    }
-    .chart-status.error { color: #ef5350; }
-
-    @media (max-width: 600px) {
-      .sheet-wrap { height: 300px; }
-    }
+    .status-bar { font-size: .78rem; color: #888; text-align: center; padding: 6px 0 0; }
+    .status-bar.err { color: #ef5350; }
   </style>
 </head>
 <body>
-  <!-- nav -->
-  <div class="header">
-    <header>
-      <ul class="header-list">
-        <li><a href="../index.html"            class="link-to">Home</a></li>
-        <li><a href="../data/index.html"       class="link-to">Data</a></li>
-        <li><a href="../stats/index.html"      class="link-to">Stats</a></li>
-        <li><a href="../ranking/index.html"    class="link-to">Ranking</a></li>
-        <li><a href="../player/index.html"     class="link-to">Player</a></li>
-        <li><a href="./index.html"             class="link-now">Record</a></li>
-        <li><a href="../regulation/index.html" class="link-to">Regulation</a></li>
-      </ul>
-    </header>
-  </div>
 
-  <!-- sub-header -->
-  <div class="record-subheader">
-    <span class="record-subheader-title">当日成績表</span>
-    <a class="btn-ext"
+<!-- nav -->
+<div class="header">
+  <header>
+    <ul class="header-list">
+      <li><a href="../index.html"            class="link-to">Home</a></li>
+      <li><a href="../data/index.html"       class="link-to">Data</a></li>
+      <li><a href="../stats/index.html"      class="link-to">Stats</a></li>
+      <li><a href="../ranking/index.html"    class="link-to">Ranking</a></li>
+      <li><a href="../player/index.html"     class="link-to">Player</a></li>
+      <li><a href="./index.html"             class="link-now">Record</a></li>
+      <li><a href="../regulation/index.html" class="link-to">Regulation</a></li>
+    </ul>
+  </header>
+</div>
+
+<!-- sub-header -->
+<div class="rec-subhdr">
+  <span class="rec-subhdr-title">当日成績表</span>
+  <div class="rec-subhdr-right">
+    <button class="btn-sm" id="btn-refresh" onclick="loadAll()">↺ 更新</button>
+    <a class="btn-sm"
        href="https://docs.google.com/spreadsheets/d/e/2PACX-1vSZ69WloYBrOHN0GNp1ykLBcCFT9QzoAopfbnDPBCKEuuwRhYdcLGWLqSRj_SM1rFW6LybmUm4pc35o/pubhtml"
        target="_blank" rel="noopener">↗ 別タブで開く</a>
   </div>
+</div>
 
-  <!-- embedded sheet (range=A1:J25 を試す) -->
-  <div class="sheet-wrap">
-    <iframe
-      src="https://docs.google.com/spreadsheets/d/e/2PACX-1vSZ69WloYBrOHN0GNp1ykLBcCFT9QzoAopfbnDPBCKEuuwRhYdcLGWLqSRj_SM1rFW6LybmUm4pc35o/pubhtml?gid=0&range=A1:J25&widget=false&headers=false"
-      title="当日成績表"
-      sandbox="allow-scripts allow-same-origin allow-popups">
-    </iframe>
+<!-- embedded sheet -->
+<div class="sheet-wrap">
+  <iframe
+    src="https://docs.google.com/spreadsheets/d/e/2PACX-1vSZ69WloYBrOHN0GNp1ykLBcCFT9QzoAopfbnDPBCKEuuwRhYdcLGWLqSRj_SM1rFW6LybmUm4pc35o/pubhtml?range=A1:J25&widget=false&headers=false"
+    title="当日成績表"
+    sandbox="allow-scripts allow-same-origin allow-popups">
+  </iframe>
+</div>
+
+<!-- dynamic content -->
+<div class="rec-body">
+
+  <!-- panels -->
+  <div class="panels">
+    <!-- 次の対局 -->
+    <div class="panel">
+      <div class="panel-title">次の対局</div>
+      <div id="next-game-body"><span style="color:#666;font-size:.85rem">読み込み中…</span></div>
+    </div>
+    <!-- 決勝出場ライン -->
+    <div class="panel">
+      <div class="panel-title">決勝出場ライン（予選小計 上位4名）</div>
+      <div id="finalist-body"><span style="color:#666;font-size:.85rem">読み込み中…</span></div>
+    </div>
+  </div>
+
+  <!-- standings -->
+  <div class="section-title">順位表</div>
+  <div class="standings-wrap">
+    <table class="standings">
+      <thead><tr>
+        <th>#</th><th class="name-td" style="text-align:left">名前</th>
+        <th>小計</th><th>持越</th><th>決1</th><th>決2</th><th>合計</th>
+      </tr></thead>
+      <tbody id="standings-body"></tbody>
+    </table>
   </div>
 
   <!-- chart -->
-  <div class="chart-section">
-    <div class="chart-header">
-      <span class="chart-title">ポイント推移グラフ</span>
-      <button class="btn-refresh" id="btn-refresh" onclick="loadChart()">↺ 更新</button>
-    </div>
-    <div class="chart-wrap">
-      <canvas id="scoreChart"></canvas>
-    </div>
-    <div class="chart-status" id="chart-status">読み込み中…</div>
+  <div class="chart-header" style="margin-top:18px">
+    <div class="section-title" style="margin:0">ポイント推移グラフ</div>
   </div>
+  <div class="chart-wrap">
+    <canvas id="scoreChart"></canvas>
+  </div>
+  <div class="status-bar" id="status-bar">読み込み中…</div>
+
+</div><!-- /rec-body -->
 
 <script>
-const CSV_URL =
-  'https://docs.google.com/spreadsheets/d/e/' +
-  '2PACX-1vSZ69WloYBrOHN0GNp1ykLBcCFT9QzoAopfbnDPBCKEuuwRhYdcLGWLqSRj_SM1rFW6LybmUm4pc35o' +
-  '/pub?gid=0&single=true&output=csv';
+// ── Schedule (1-indexed seat numbers) ──────────────────────────
+const SCHEDULE = [
+  {a:[1,2,3,4],b:[5,6,7,8],bye:9},
+  {a:[1,2,5,6],b:[3,4,7,9],bye:8},
+  {a:[1,2,8,9],b:[3,4,5,6],bye:7},
+  {a:[1,4,5,9],b:[2,3,7,8],bye:6},
+  {a:[1,4,7,8],b:[2,3,6,9],bye:5},
+  {a:[1,3,6,8],b:[2,5,7,9],bye:4},
+  {a:[1,6,7,9],b:[2,4,5,8],bye:3},
+  {a:[1,3,5,7],b:[4,6,8,9],bye:2},
+  {a:[2,4,6,7],b:[3,5,8,9],bye:1},
+  {a:[1,2,3,4],b:[5,6,7,8],bye:9},
+  {a:[1,2,5,6],b:[3,4,7,9],bye:8},
+  {a:[1,2,8,9],b:[3,4,5,6],bye:7},
+  {a:[1,4,5,9],b:[2,3,7,8],bye:6},
+  {a:[1,4,7,8],b:[2,3,6,9],bye:5},
+  {a:[1,3,6,8],b:[2,5,7,9],bye:4},
+  {a:[1,6,7,9],b:[2,4,5,8],bye:3},
+  {a:[1,3,5,7],b:[4,6,8,9],bye:2},
+  {a:[2,4,6,7],b:[3,5,8,9],bye:1},
+];
 
 const COLORS = [
   '#ef5350','#42a5f5','#66bb6a','#ffa726',
   '#ab47bc','#26c6da','#d4e157','#ff7043','#8d6e63'
 ];
 
-let chartInstance = null;
+// CSV URL — no gid (uses default/first sheet), range restricted to A1:J25
+const CSV_BASE =
+  'https://docs.google.com/spreadsheets/d/e/' +
+  '2PACX-1vSZ69WloYBrOHN0GNp1ykLBcCFT9QzoAopfbnDPBCKEuuwRhYdcLGWLqSRj_SM1rFW6LybmUm4pc35o' +
+  '/pub?single=true&output=csv&range=A1:J25';
 
-// ── CSV parse (simple: no quoted commas in this sheet) ──
+let chartInst = null;
+
+// ── CSV parser ──────────────────────────────────────────────────
 function parseCSV(text) {
-  return text.trim().split('\n').map(line =>
-    line.split(',').map(c => c.trim().replace(/^"|"$/g, ''))
-  );
-}
-
-// ── Find player names row: first row with 5+ non-numeric non-empty cells ──
-function findNames(rows) {
-  for (const row of rows.slice(0, 4)) {
-    const names = row.slice(1).filter(c => c !== '' && isNaN(Number(c)));
-    if (names.length >= 5) return names;
-  }
-  return null;
-}
-
-// ── Find game rows: col A is integer 1–18 ──
-function findGameRows(rows) {
-  return rows.filter(row => {
-    const n = parseInt(row[0], 10);
-    return !isNaN(n) && n >= 1 && n <= 18;
+  // Split lines; handle \r\n and \n
+  return text.trim().split(/\r?\n/).map(line => {
+    // Simple split — values in this sheet don't contain commas
+    return line.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
   });
 }
 
-async function loadChart() {
+// ── Sheet data extractor ────────────────────────────────────────
+function extractData(rows) {
+  // 1. Identify the first game row (col A = integer "1")
+  //    and find the contiguous block of game rows (1..N)
+  let firstGameRow = -1;
+  for (let i = 0; i < rows.length; i++) {
+    const a = rows[i][0];
+    if (parseInt(a, 10) === 1 && String(parseInt(a,10)) === a) {
+      firstGameRow = i; break;
+    }
+  }
+  if (firstGameRow === -1) return null;
+
+  // Collect game rows in sequence
+  const gameRows = [];
+  for (let i = firstGameRow; i < rows.length; i++) {
+    const n = Number(rows[i][0]);
+    if (Number.isInteger(n) && n >= 1 && n <= 18) {
+      // cells B..J (indices 1..9) are the player scores
+      gameRows.push({ gameNum: n, cells: rows[i].slice(1, 10) });
+    }
+  }
+  // Sort by game number (should already be sorted)
+  gameRows.sort((a, b) => a.gameNum - b.gameNum);
+
+  // 2. Player names: look for the row just before firstGameRow
+  //    that contains non-numeric strings — these are the names (seats 1-9).
+  //    We look backward from firstGameRow - 1.
+  let names = null;
+  for (let i = firstGameRow - 1; i >= 0; i--) {
+    const candidates = rows[i].slice(1, 10).filter(c => c !== '' && isNaN(Number(c)));
+    if (candidates.length >= 5) {
+      // Use the 9 cells in B..J, keeping empties to preserve seat alignment
+      names = rows[i].slice(1, 10).map(c => c.trim());
+      break;
+    }
+  }
+  // Fallback: try the row at firstGameRow - 2
+  if (!names) {
+    for (let i = 0; i < firstGameRow; i++) {
+      const slice = rows[i].slice(1, 10);
+      if (slice.filter(c => c !== '' && isNaN(Number(c))).length >= 5) {
+        names = slice.map(c => c.trim()); break;
+      }
+    }
+  }
+  if (!names) return null;
+
+  // 3. 小計 / 持越 / 決1 / 決2 / 合計 rows
+  const findRow = label => {
+    for (const row of rows) {
+      if (row[0].trim() === label)
+        return row.slice(1, 10).map(v => v.trim() === '' ? null : parseFloat(v));
+    }
+    return null;
+  };
+
+  return {
+    names,               // length 9; names[i] = player at seat i+1
+    gameRows,            // [{gameNum, cells:[9 strings]}]
+    subtotals: findRow('小計'),
+    carryover: findRow('持越'),
+    final1:    findRow('決1'),
+    final2:    findRow('決2'),
+    totals:    findRow('合計'),
+  };
+}
+
+// ── Determine completed game count ─────────────────────────────
+// A game is "complete" if at least 7 of 9 score cells are non-empty numbers
+// (8 players score, 1 bye is empty)
+function completedGames(gameRows) {
+  return gameRows.filter(g =>
+    g.cells.filter(v => v !== '' && !isNaN(Number(v))).length >= 7
+  ).length;
+}
+
+// ── Render: 次の対局 ───────────────────────────────────────────
+function renderNextGame(data) {
+  const el = document.getElementById('next-game-body');
+  const done = completedGames(data.gameRows);
+
+  if (done >= 18) {
+    el.innerHTML = `<div style="color:#81c784;font-weight:bold">予選終了</div>`;
+    return;
+  }
+
+  const gi = done; // 0-indexed → SCHEDULE[gi] is the next game
+  const g  = SCHEDULE[gi];
+  const p  = data.names; // p[i] = name at seat i+1; p[seatNum-1] = name
+
+  const nameList = seats => seats.map(s => p[s - 1] || `座席${s}`).join('　');
+
+  el.innerHTML = `
+    <div class="next-game-label">G${gi + 1} / 18</div>
+    <div class="table-group">
+      <span class="tg-badge a">A卓</span>
+      <span class="tg-names">${nameList(g.a)}</span>
+    </div>
+    <div class="table-group">
+      <span class="tg-badge b">B卓</span>
+      <span class="tg-names">${nameList(g.b)}</span>
+    </div>
+    <div class="table-group">
+      <span class="tg-badge bye">抜け番</span>
+      <span class="tg-names" style="color:#888">${p[g.bye - 1] || `座席${g.bye}`}</span>
+    </div>`;
+}
+
+// ── Render: 決勝出場ライン ─────────────────────────────────────
+function renderFinalists(data) {
+  const el = document.getElementById('finalist-body');
+  if (!data.subtotals) {
+    el.innerHTML = `<span style="color:#666;font-size:.85rem">データなし</span>`; return;
+  }
+  const ranks = data.names
+    .map((name, i) => ({ name, sub: data.subtotals[i] ?? 0 }))
+    .sort((a, b) => b.sub - a.sub);
+
+  const medals = ['🥇','🥈','🥉','4'];
+  el.innerHTML = ranks.map((r, i) => {
+    const cls = i < 4 ? (i === 3 ? 'in-line border-line' : 'in-line') : '';
+    return `<div class="finalist-row ${cls}">
+      <span class="finalist-rank">${medals[i] ?? i + 1}</span>
+      <span class="finalist-name">${r.name}</span>
+      <span class="finalist-score">${r.sub.toFixed(1)}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── Render: 順位表 ─────────────────────────────────────────────
+function renderStandings(data) {
+  const tbody = document.getElementById('standings-body');
+  if (!data.subtotals) { tbody.innerHTML = ''; return; }
+
+  const rows = data.names.map((name, i) => {
+    const sub = data.subtotals?.[i] ?? 0;
+    const car = data.carryover?.[i] ?? (sub / 2);
+    const f1  = data.final1?.[i];
+    const f2  = data.final2?.[i];
+    const tot = data.totals?.[i] ?? (car + (f1 ?? 0) + (f2 ?? 0));
+    return { name, sub, car, f1, f2, tot };
+  }).sort((a, b) => b.tot - a.tot || b.sub - a.sub);
+
+  const medals = ['🥇','🥈','🥉'];
+  const fmt = v => v === null || v === undefined ? '—' : v.toFixed(1);
+
+  tbody.innerHTML = rows.map((r, i) => {
+    const fin = i < 4;
+    const med = medals[i] ?? (i + 1);
+    return `<tr class="${fin ? 'finalist-tr' : ''}">
+      <td><span class="medal">${med}</span></td>
+      <td class="name-td">${r.name}</td>
+      <td>${r.sub.toFixed(1)}</td>
+      <td>${r.car.toFixed(2)}</td>
+      <td>${fmt(r.f1)}</td>
+      <td>${fmt(r.f2)}</td>
+      <td>${r.tot.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Render: Chart ──────────────────────────────────────────────
+function renderChart(data) {
+  // Build per-player cumulative arrays from game rows
+  const playerCount = data.names.length;
+  const cumulative  = Array.from({length: playerCount}, () => [0]);
+
+  for (const g of data.gameRows) {
+    for (let p = 0; p < playerCount; p++) {
+      const prev  = cumulative[p].at(-1);
+      const v     = g.cells[p];
+      const score = (v !== '' && !isNaN(Number(v))) ? parseFloat(v) : 0;
+      cumulative[p].push(prev + score);
+    }
+  }
+
+  const gameCount = data.gameRows.length;
+  const labels    = ['', ...Array.from({length: gameCount}, (_, i) => `G${i + 1}`)];
+  const datasets  = data.names.map((name, i) => ({
+    label:           name,
+    data:            cumulative[i],
+    borderColor:     COLORS[i % COLORS.length],
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    pointRadius: gameCount <= 10 ? 3 : 2,
+    tension: 0.2,
+  }));
+
+  if (chartInst) chartInst.destroy();
+  chartInst = new Chart(document.getElementById('scoreChart'), {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      animation: false,
+      plugins: {
+        legend: { position: 'top', labels: { color: '#ccc', boxWidth: 12, font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}` } }
+      },
+      scales: {
+        x: { ticks: { color: '#999', font: {size:11} }, grid: { color: 'rgba(255,255,255,.06)' } },
+        y: { ticks: { color: '#999', font: {size:11} }, grid: { color: 'rgba(255,255,255,.06)' } }
+      }
+    }
+  });
+}
+
+// ── Main load ──────────────────────────────────────────────────
+async function loadAll() {
   const btn    = document.getElementById('btn-refresh');
-  const status = document.getElementById('chart-status');
+  const status = document.getElementById('status-bar');
   btn.disabled = true;
-  status.className = 'chart-status';
+  status.className = 'status-bar';
   status.textContent = '読み込み中…';
 
   try {
-    const res  = await fetch(CSV_URL, { cache: 'no-store' });
+    const url = CSV_BASE + '&_=' + Date.now();
+    const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
     const rows = parseCSV(text);
+    const data = extractData(rows);
 
-    const names = findNames(rows);
-    if (!names) throw new Error('プレイヤー名が見つかりませんでした');
+    if (!data) throw new Error('データ構造を認識できませんでした。シートの構成を確認してください。');
 
-    const gameRows = findGameRows(rows);
-    if (gameRows.length === 0) throw new Error('ゲームデータがありません');
+    renderNextGame(data);
+    renderFinalists(data);
+    renderStandings(data);
+    renderChart(data);
 
-    const playerCount = names.length;
-    const gameCount   = gameRows.length;
-
-    // cumulative[p] = [0, after_g1, after_g2, ...]
-    const cumulative = Array.from({length: playerCount}, () => [0]);
-    for (const row of gameRows) {
-      for (let p = 0; p < playerCount; p++) {
-        const prev  = cumulative[p].at(-1);
-        const cell  = row[p + 1] ?? '';
-        const score = cell === '' ? 0 : parseFloat(cell) || 0;
-        cumulative[p].push(prev + score);
-      }
-    }
-
-    const labels   = ['', ...Array.from({length: gameCount}, (_, i) => `G${i + 1}`)];
-    const datasets = names.map((name, i) => ({
-      label:           name,
-      data:            cumulative[i],
-      borderColor:     COLORS[i % COLORS.length],
-      backgroundColor: 'transparent',
-      borderWidth:     2,
-      pointRadius:     cumulative[i].length <= 10 ? 3 : 2,
-      tension:         0.2,
-    }));
-
-    if (chartInstance) chartInstance.destroy();
-    chartInstance = new Chart(document.getElementById('scoreChart'), {
-      type: 'line',
-      data: { labels, datasets },
-      options: {
-        responsive: true,
-        animation: false,
-        plugins: {
-          legend: {
-            position: 'top',
-            labels: { color: '#ccc', boxWidth: 12, font: { size: 11 } }
-          },
-          tooltip: {
-            callbacks: {
-              label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}`
-            }
-          }
-        },
-        scales: {
-          x: {
-            ticks: { color: '#999', font: { size: 11 } },
-            grid:  { color: 'rgba(255,255,255,0.06)' }
-          },
-          y: {
-            ticks: { color: '#999', font: { size: 11 } },
-            grid:  { color: 'rgba(255,255,255,0.06)' }
-          }
-        }
-      }
-    });
-
-    const entered = gameRows.filter(r => r.slice(1).some(c => c !== '')).length;
-    status.textContent = `${entered} / ${gameCount} 試合入力済み`;
+    const done = completedGames(data.gameRows);
+    status.textContent = `予選 ${done} / 18 試合完了`;
   } catch (e) {
-    status.className = 'chart-status error';
+    status.className = 'status-bar err';
     status.textContent = `取得エラー: ${e.message}`;
     console.error(e);
   } finally {
@@ -266,7 +470,7 @@ async function loadChart() {
   }
 }
 
-loadChart();
+loadAll();
 </script>
 </body>
 </html>
