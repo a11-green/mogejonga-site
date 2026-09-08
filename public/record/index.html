@@ -31,18 +31,19 @@
     .sheet-wrap {
       width: 100%; overflow-x: auto; max-height: 480px; overflow-y: auto;
       border-bottom: 1px solid rgba(255,255,255,.07);
-      background: rgba(0,0,0,.2);
+      background: rgba(0,0,0,.55);
     }
     @media (max-width: 560px) { .sheet-wrap { max-height: 320px; } }
 
     .raw-table { border-collapse: collapse; font-size: .78rem; white-space: nowrap; }
     .raw-table td {
-      padding: 3px 8px; border: 1px solid rgba(255,255,255,.08);
+      padding: 3px 8px; border: 1px solid rgba(255,255,255,.1);
       min-width: 52px; text-align: right; color: #ccc;
+      background: rgba(0,0,0,.3);
     }
     .raw-table td.rt-a {
-      text-align: left; background: rgba(255,255,255,.03);
-      color: #888; min-width: 44px; position: sticky; left: 0;
+      text-align: left; background: rgba(0,0,0,.5);
+      color: #999; min-width: 44px; position: sticky; left: 0;
     }
     .raw-table tr.rt-names td {
       background: rgba(30,24,2,.97); color: rgba(255,200,50,.9);
@@ -53,10 +54,10 @@
       color: #888; background: rgba(18,18,18,.97);
       position: sticky; left: 0; top: 0; z-index: 3;
     }
-    .raw-table tr.rt-game:nth-child(even) td { background: rgba(255,255,255,.02); }
-    .raw-table tr.rt-game:nth-child(even) td.rt-a { background: rgba(255,255,255,.04); }
-    .raw-table tr.rt-summary td { background: rgba(79,195,247,.07); color: #90caf9; font-weight: bold; }
-    .raw-table tr.rt-summary td.rt-a { color: #90caf9; }
+    .raw-table tr.rt-game:nth-child(even) td { background: rgba(255,255,255,.04); }
+    .raw-table tr.rt-game:nth-child(even) td.rt-a { background: rgba(0,0,0,.55); }
+    .raw-table tr.rt-summary td { background: rgba(20,50,80,.7); color: #90caf9; font-weight: bold; }
+    .raw-table tr.rt-summary td.rt-a { color: #90caf9; background: rgba(10,30,55,.8); }
     .raw-table td.rt-pos { color: #a5d6a7; }
     .raw-table td.rt-neg { color: #ef9a9a; }
     .raw-table td.rt-zero { color: #555; }
@@ -71,23 +72,35 @@
     .rec-body { max-width: 960px; margin: 0 auto; padding: 12px 14px 40px; }
 
     /* ── 卓組 schedule table ── */
-    .schedule-wrap { overflow-x: auto; margin-bottom: 14px; }
+    .schedule-wrap {
+      overflow-x: auto; overflow-y: auto;
+      max-height: 240px;
+      margin-bottom: 14px;
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 8px;
+    }
+    @media (max-width: 560px) { .schedule-wrap { max-height: 200px; } }
     table.schedule {
       width: 100%; border-collapse: collapse; font-size: .82rem; white-space: nowrap;
     }
-    table.schedule th {
-      background: rgba(255,255,255,.05); color: #aaa;
-      padding: 5px 10px; border-bottom: 1px solid rgba(255,255,255,.1);
+    table.schedule thead th {
+      background: rgba(0,0,0,.6); color: #999;
+      padding: 5px 10px; border-bottom: 1px solid rgba(255,255,255,.12);
       font-weight: normal; text-align: left;
+      position: sticky; top: 0; z-index: 1;
     }
     table.schedule th.sch-g { text-align: center; width: 46px; }
-    table.schedule td { padding: 5px 10px; border-bottom: 1px solid rgba(255,255,255,.04); }
+    table.schedule td {
+      padding: 5px 10px; border-bottom: 1px solid rgba(255,255,255,.05);
+      background: rgba(0,0,0,.25);
+    }
     table.schedule td.sch-g { text-align: center; color: #666; }
-    table.schedule tr.sch-done td { color: #555; }
+    table.schedule tr.sch-done td { color: #555; background: rgba(0,0,0,.35); }
     table.schedule tr.sch-done td.sch-g { color: #444; }
-    table.schedule tr.sch-next { border-top: 1px solid rgba(255,200,50,.3); border-bottom: 1px solid rgba(255,200,50,.3); }
+    table.schedule tr.sch-next { outline: 1px solid rgba(255,200,50,.4); }
     table.schedule tr.sch-next td {
-      background: rgba(255,200,50,.12); color: rgba(255,200,50,.95); font-weight: bold;
+      background: rgba(60,48,5,.85); color: rgba(255,200,50,.95); font-weight: bold;
     }
     table.schedule tr.sch-future td { color: #888; }
 
@@ -111,16 +124,25 @@
       letter-spacing: .06em; text-transform: uppercase;
       margin-bottom: 8px; margin-top: 14px;
     }
-    .standings-wrap { overflow-x: auto; }
+    .standings-wrap {
+      overflow-x: auto;
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 8px;
+    }
     table.standings {
       width: 100%; border-collapse: collapse; font-size: .82rem; white-space: nowrap;
     }
     table.standings th {
-      background: rgba(255,255,255,.05); color: #aaa;
-      padding: 6px 8px; text-align: center; border-bottom: 1px solid rgba(255,255,255,.1);
+      background: rgba(0,0,0,.5); color: #999;
+      padding: 6px 8px; text-align: center; border-bottom: 1px solid rgba(255,255,255,.12);
       font-weight: normal;
     }
-    table.standings td { padding: 6px 8px; text-align: center; border-bottom: 1px solid rgba(255,255,255,.05); }
+    table.standings td {
+      padding: 6px 8px; text-align: center;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      background: rgba(0,0,0,.25);
+    }
     table.standings tr.finalist-tr td { color: #ffd700; }
     table.standings tr.finalist-tr td.name-td { font-weight: bold; }
     table.standings td.name-td { text-align: left; }
@@ -191,7 +213,7 @@
     <table class="standings">
       <thead><tr>
         <th>#</th><th class="name-td" style="text-align:left">名前</th>
-        <th>小計</th><th>持越</th><th>決1</th><th>決2</th><th>合計</th><th>差</th>
+        <th>小計</th><th>持越</th><th>決1</th><th>決2</th><th>合計</th><th>ボーダーとの差</th>
       </tr></thead>
       <tbody id="standings-body"></tbody>
     </table>
@@ -236,12 +258,26 @@ const COLORS = [
   '#ab47bc','#26c6da','#d4e157','#ff7043','#8d6e63'
 ];
 
-// CSV URL — no gid (uses default/first sheet), no range restriction
-// Column slice(1,10) in parsing already limits to B-J
-const CSV_BASE =
-  'https://docs.google.com/spreadsheets/d/e/' +
-  '2PACX-1vQxtQ4FX1Yfg70tLIGiGYo2VrbM0Vu4BTBrdTYJMIeOWacVyvAHiNO6KOpW7PmY9xV4KcLYb1O2k1Mk' +
-  '/pub?single=true&output=csv';
+const SHEET_KEY = '2PACX-1vQxtQ4FX1Yfg70tLIGiGYo2VrbM0Vu4BTBrdTYJMIeOWacVyvAHiNO6KOpW7PmY9xV4KcLYb1O2k1Mk';
+
+// 成績シート（デフォルト）
+const CSV_BASE = `https://docs.google.com/spreadsheets/d/e/${SHEET_KEY}/pub?single=true&output=csv`;
+
+// 卓組シート — gid はスプレッドシートURLの #gid=XXXXX で確認
+const TACUGUMI_GID = '1212752704';
+
+// 卓組シート M2:M19 から前半(M2:M10)・後半(M11:M19)の座席割当を取得
+async function fetchSeatNames() {
+  if (!TACUGUMI_GID) return null;
+  const url = `https://docs.google.com/spreadsheets/d/e/${SHEET_KEY}/pub?single=true&output=csv&gid=${TACUGUMI_GID}&range=M2:M19&_=${Date.now()}`;
+  const res = await fetch(url);
+  if (!res.ok) return null;
+  const rows = parseCSV(await res.text());
+  return {
+    namesFirst:  rows.slice(0, 9).map(r => (r[0] ?? '').trim()).filter(Boolean),
+    namesSecond: rows.slice(9, 18).map(r => (r[0] ?? '').trim()).filter(Boolean),
+  };
+}
 
 let chartInst = null;
 
@@ -390,17 +426,20 @@ function renderRawTable(rows) {
     // 名前行と最初のゲーム行の間の行（座席番号行など）をスキップ
     if (foundNames && !foundFirstGame && !isNames && !isGame && !isSummary) continue;
 
-    // A卓・B卓それぞれの合計チェックを計算
+    // チェック列を計算（予選：A卓/B卓個別、決勝：全体合計）
     let checkA = '', checkB = '', checkACls = 'rt-chk', checkBCls = 'rt-chk';
+    const fmt = n => Math.abs(n) < 0.01 ? '✓' : (n > 0 ? '+' : '') + n.toFixed(1);
+    const num = i => { const v = parseFloat(cells[i] ?? ''); return isNaN(v) ? 0 : v; };
     if (isGame) {
       const gi  = +colA - 1;
       const sch = SCHEDULE[gi];
-      const num = seat => { const v = parseFloat(cells[seat] ?? ''); return isNaN(v) ? 0 : v; };
       const sA  = sch.a.reduce((s, seat) => s + num(seat), 0);
       const sB  = sch.b.reduce((s, seat) => s + num(seat), 0);
-      const fmt = n => Math.abs(n) < 0.01 ? '✓' : (n > 0 ? '+' : '') + n.toFixed(1);
       checkA = fmt(sA); checkACls = 'rt-chk ' + (Math.abs(sA) < 0.01 ? 'rt-chk-ok' : 'rt-chk-fail');
       checkB = fmt(sB); checkBCls = 'rt-chk ' + (Math.abs(sB) < 0.01 ? 'rt-chk-ok' : 'rt-chk-fail');
+    } else if (colA === '決1' || colA === '決2') {
+      const total = cells.slice(1).reduce((s, _, i) => s + num(i + 1), 0);
+      checkA = fmt(total); checkACls = 'rt-chk ' + (Math.abs(total) < 0.01 ? 'rt-chk-ok' : 'rt-chk-fail');
     }
 
     const rowCls = isNames ? 'rt-names' : isSummary ? 'rt-summary' : isGame ? 'rt-game' : 'rt-other';
@@ -467,6 +506,16 @@ function renderSchedule(data) {
 
   html += '</tbody></table>';
   el.innerHTML = html;
+
+  // 現在のゲーム行が中央に見えるようスクロール
+  requestAnimationFrame(() => {
+    const wrap = document.querySelector('.schedule-wrap');
+    const row  = wrap?.querySelector('tr.sch-next');
+    if (!wrap || !row) return;
+    const wrapRect = wrap.getBoundingClientRect();
+    const rowRect  = row.getBoundingClientRect();
+    wrap.scrollTop += rowRect.top - wrapRect.top - wrap.clientHeight / 2 + row.clientHeight / 2;
+  });
 }
 
 // ── Render: 決勝出場ライン ─────────────────────────────────────
@@ -588,14 +637,23 @@ async function loadAll() {
   status.textContent = '読み込み中…';
 
   try {
-    const url = CSV_BASE + '&_=' + Date.now();
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const text = await res.text();
-    const rows = parseCSV(text);
+    // 成績シートと卓組シートを並行取得
+    const [mainRes, seatNames] = await Promise.all([
+      fetch(CSV_BASE + '&_=' + Date.now()),
+      fetchSeatNames(),
+    ]);
+    if (!mainRes.ok) throw new Error(`HTTP ${mainRes.status}`);
+    const rows = parseCSV(await mainRes.text());
     const data = extractData(rows);
 
     if (!data) throw new Error('データ構造を認識できませんでした。シートの構成を確認してください。');
+
+    // 卓組シートから取得した座席割当で上書き（取得できた場合のみ）
+    if (seatNames && seatNames.namesFirst.length >= 9) {
+      data.namesFirst  = seatNames.namesFirst;
+      data.namesSecond = seatNames.namesSecond.length >= 9 ? seatNames.namesSecond : seatNames.namesFirst;
+      data.names       = data.namesFirst;
+    }
 
     document.getElementById('sheet-title').textContent = extractTitle(rows);
     renderRawTable(rows);
