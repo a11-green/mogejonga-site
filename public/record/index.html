@@ -181,10 +181,7 @@
 
 <!-- sub-header -->
 <div class="rec-subhdr">
-  <div style="display:flex;align-items:baseline;gap:10px">
-    <span class="rec-subhdr-title">当日成績表</span>
-    <span id="sheet-title" style="font-size:.8rem;color:#bbb"></span>
-  </div>
+  <span class="rec-subhdr-title" id="page-title">当日成績表</span>
   <div class="rec-subhdr-right">
     <button class="btn-sm" id="btn-refresh" onclick="loadAll()">↺ 更新</button>
     <a class="btn-sm"
@@ -444,12 +441,17 @@ function renderRawTable(rows) {
 
     const rowCls = isNames ? 'rt-names' : isSummary ? 'rt-summary' : isGame ? 'rt-game' : 'rt-other';
     html += `<tr class="${rowCls}">`;
+    const byeSeat = isGame ? SCHEDULE[+colA - 1].bye : -1;
     cells.forEach((cell, ci) => {
       const val = (cell ?? '').trim();
       let cls = ci === 0 ? 'rt-a' : '';
       if (ci >= 1 && ci <= 9 && val !== '') {
         const n = parseFloat(val);
-        if (!isNaN(n)) cls += n > 0 ? ' rt-pos' : n < 0 ? ' rt-neg' : ' rt-zero';
+        if (!isNaN(n)) {
+          if (n > 0) cls += ' rt-pos';
+          else if (n < 0) cls += ' rt-neg';
+          else cls += (isGame && ci === byeSeat) ? ' rt-zero' : ' rt-pos'; // 抜け番の0は暗く、それ以外は正と同色
+        }
       }
       html += `<td class="${cls.trim()}">${escHtml(val)}</td>`;
     });
@@ -655,7 +657,9 @@ async function loadAll() {
       data.names       = data.namesFirst;
     }
 
-    document.getElementById('sheet-title').textContent = extractTitle(rows);
+    const sheetTitle = extractTitle(rows);
+    document.getElementById('page-title').textContent =
+      '当日成績表' + (sheetTitle ? `（${sheetTitle}）` : '');
     renderRawTable(rows);
     renderSchedule(data);
     renderStandings(data);
