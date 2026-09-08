@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mogejonga — 記録</title>
+  <link rel="stylesheet" href="../css/layout.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    /* ── sub-header ── */
+    .rec-subhdr {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 7px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.25);
+    }
+    .rec-subhdr-title { font-size: .9rem; font-weight: bold; color: rgba(255,200,50,.9); }
+    .rec-subhdr-right { display: flex; align-items: center; gap: 8px; }
+    .btn-sm {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 5px; color: #ccc; text-decoration: none;
+      font-size: .75rem; white-space: nowrap; cursor: pointer;
+    }
+    .btn-sm:hover { background: rgba(255,255,255,.13); color: #fff; }
+    .btn-sm:disabled { opacity: .4; cursor: default; }
+
+    /* ── raw sheet table ── */
+    .sheet-wrap {
+      width: 100%; overflow-x: auto; max-height: 480px; overflow-y: auto;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      background: rgba(0,0,0,.55);
+    }
+    @media (max-width: 560px) { .sheet-wrap { max-height: 320px; } }
+
+    .raw-table { border-collapse: collapse; font-size: .78rem; white-space: nowrap; }
+    .raw-table td {
+      padding: 3px 8px; border: 1px solid rgba(255,255,255,.1);
+      min-width: 52px; text-align: right; color: #ccc;
+      background: rgba(0,0,0,.3);
+    }
+    .raw-table td.rt-a {
+      text-align: left; background: rgba(0,0,0,.5);
+      color: #999; min-width: 44px; position: sticky; left: 0;
+    }
+    .raw-table tr.rt-names td {
+      background: rgba(30,24,2,.97); color: rgba(255,200,50,.9);
+      font-weight: bold; text-align: center;
+      position: sticky; top: 0; z-index: 2;
+    }
+    .raw-table tr.rt-names td.rt-a {
+      color: #888; background: rgba(18,18,18,.97);
+      position: sticky; left: 0; top: 0; z-index: 3;
+    }
+    .raw-table tr.rt-game:nth-child(even) td { background: rgba(255,255,255,.04); }
+    .raw-table tr.rt-game:nth-child(even) td.rt-a { background: rgba(0,0,0,.55); }
+    .raw-table tr.rt-summary td { background: rgba(20,50,80,.7); color: #90caf9; font-weight: bold; }
+    .raw-table tr.rt-summary td.rt-a { color: #90caf9; background: rgba(10,30,55,.8); }
+    .raw-table td.rt-pos { color: #a5d6a7; }
+    .raw-table td.rt-neg { color: #ef9a9a; }
+    .raw-table td.rt-zero { color: #555; }
+    .raw-table td.rt-chk {
+      min-width: 36px; font-size: .72rem;
+      border-left: 2px solid rgba(255,255,255,.12); color: #555;
+    }
+    .raw-table td.rt-chk-ok { color: #81c784; }
+    .raw-table td.rt-chk-fail { color: #ef9a9a; font-weight: bold; }
+
+    /* ── main content area ── */
+    .rec-body { max-width: 960px; margin: 0 auto; padding: 12px 14px 40px; }
+
+    /* ── 卓組 schedule table ── */
+    .schedule-wrap {
+      overflow-x: auto; overflow-y: auto;
+      max-height: 240px;
+      margin-bottom: 14px;
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 8px;
+    }
+    @media (max-width: 560px) { .schedule-wrap { max-height: 200px; } }
+    table.schedule {
+      width: 100%; border-collapse: collapse; font-size: .82rem; white-space: nowrap;
+    }
+    table.schedule thead th {
+      background: rgba(0,0,0,.6); color: #999;
+      padding: 5px 10px; border-bottom: 1px solid rgba(255,255,255,.12);
+      font-weight: normal; text-align: left;
+      position: sticky; top: 0; z-index: 1;
+    }
+    table.schedule th.sch-g { text-align: center; width: 46px; }
+    table.schedule td {
+      padding: 5px 10px; border-bottom: 1px solid rgba(255,255,255,.05);
+      background: rgba(0,0,0,.25);
+    }
+    table.schedule td.sch-g { text-align: center; color: #666; }
+    table.schedule tr.sch-done td { color: #555; background: rgba(0,0,0,.35); }
+    table.schedule tr.sch-done td.sch-g { color: #444; }
+    table.schedule tr.sch-next { outline: 1px solid rgba(255,200,50,.4); }
+    table.schedule tr.sch-next td {
+      background: rgba(60,48,5,.85); color: rgba(255,200,50,.95); font-weight: bold;
+    }
+    table.schedule tr.sch-future td { color: #888; }
+
+    /* 決勝出場ライン */
+    .finalist-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.06);
+      font-size: .88rem;
+    }
+    .finalist-row:last-child { border-bottom: none; }
+    .finalist-row.in-line { color: #ffd700; }
+    .finalist-row.border-line { color: #aaa; border-top: 1px dashed rgba(255,215,0,.3); margin-top: 4px; padding-top: 8px; }
+    .finalist-rank { font-weight: bold; width: 24px; flex-shrink: 0; }
+    .finalist-name { flex: 1; padding: 0 6px; }
+    .finalist-score { font-size: .82rem; color: #aaa; }
+    .finalist-row.in-line .finalist-score { color: rgba(255,215,0,.7); }
+
+    /* ── standings ── */
+    .section-title {
+      font-size: .8rem; font-weight: bold; color: #aaa;
+      letter-spacing: .06em; text-transform: uppercase;
+      margin-bottom: 8px; margin-top: 14px;
+    }
+    .standings-wrap {
+      overflow-x: auto;
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 8px;
+    }
+    table.standings {
+      width: 100%; border-collapse: collapse; font-size: .82rem; white-space: nowrap;
+    }
+    table.standings th {
+      background: rgba(0,0,0,.5); color: #999;
+      padding: 6px 8px; text-align: center; border-bottom: 1px solid rgba(255,255,255,.12);
+      font-weight: normal;
+    }
+    table.standings td {
+      padding: 6px 8px; text-align: center;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      background: rgba(0,0,0,.25);
+    }
+    table.standings tr.finalist-tr td { color: #ffd700; }
+    table.standings tr.finalist-tr td.name-td { font-weight: bold; }
+    table.standings td.name-td { text-align: left; }
+    .medal { font-size: .95rem; }
+
+    /* ── chart ── */
+    .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .chart-wrap {
+      background: rgba(0,0,0,.38);
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 10px; padding: 12px;
+    }
+    td.gap-pos { color: #a5d6a7; }
+    td.gap-neg { color: #ef9a9a; }
+    td.gap-zero { color: #888; }
+    .status-bar { font-size: .78rem; color: #888; text-align: center; padding: 6px 0 0; }
+    .status-bar.err { color: #ef5350; }
+  </style>
+</head>
+<body>
+
+<!-- nav -->
+<div class="header">
+  <header>
+    <ul class="header-list">
+      <li><a href="../index.html"            class="link-to">Home</a></li>
+      <li><a href="../data/index.html"       class="link-to">Data</a></li>
+      <li><a href="../stats/index.html"      class="link-to">Stats</a></li>
+      <li><a href="../ranking/index.html"    class="link-to">Ranking</a></li>
+      <li><a href="../player/index.html"     class="link-to">Player</a></li>
+      <li><a href="./index.html"             class="link-now">Tournament</a></li>
+      <li><a href="../regulation/index.html" class="link-to">Regulation</a></li>
+    </ul>
+  </header>
+</div>
+
+<!-- sub-header -->
+<div class="rec-subhdr">
+  <span class="rec-subhdr-title" id="page-title">当日成績表</span>
+  <div class="rec-subhdr-right">
+    <button class="btn-sm" id="btn-refresh" onclick="loadAll()">↺ 更新</button>
+    <a class="btn-sm"
+       href="https://docs.google.com/spreadsheets/d/e/2PACX-1vQxtQ4FX1Yfg70tLIGiGYo2VrbM0Vu4BTBrdTYJMIeOWacVyvAHiNO6KOpW7PmY9xV4KcLYb1O2k1Mk/pubhtml"
+       target="_blank" rel="noopener">↗ 別タブで開く</a>
+  </div>
+</div>
+
+<!-- embedded sheet (JS-rendered from CSV) -->
+<div class="sheet-wrap">
+  <div id="raw-sheet-table" style="padding:4px 0"></div>
+</div>
+
+<!-- dynamic content -->
+<div class="rec-body">
+
+  <!-- schedule -->
+  <div class="section-title">卓組</div>
+  <div class="schedule-wrap">
+    <div id="schedule-body"><span style="color:#666;font-size:.85rem">読み込み中…</span></div>
+  </div>
+
+  <!-- standings -->
+  <div class="section-title">順位表</div>
+  <div class="standings-wrap">
+    <table class="standings">
+      <thead><tr>
+        <th>#</th><th class="name-td" style="text-align:left">名前</th>
+        <th>小計</th><th>持越</th><th>決1</th><th>決2</th><th>合計</th><th>ボーダーとの差</th>
+      </tr></thead>
+      <tbody id="standings-body"></tbody>
+    </table>
+  </div>
+
+  <!-- chart -->
+  <div class="chart-header" style="margin-top:18px">
+    <div class="section-title" style="margin:0">ポイント推移グラフ</div>
+  </div>
+  <div class="chart-wrap">
+    <canvas id="scoreChart"></canvas>
+  </div>
+  <div class="status-bar" id="status-bar">読み込み中…</div>
+
+</div><!-- /rec-body -->
+
+<script>
+// ── Schedule (1-indexed seat numbers) ──────────────────────────
+const SCHEDULE = [
+  {a:[1,2,3,4],b:[5,6,7,8],bye:9},
+  {a:[1,2,5,6],b:[3,4,7,9],bye:8},
+  {a:[1,2,8,9],b:[3,4,5,6],bye:7},
+  {a:[1,4,5,9],b:[2,3,7,8],bye:6},
+  {a:[1,4,7,8],b:[2,3,6,9],bye:5},
+  {a:[1,3,6,8],b:[2,5,7,9],bye:4},
+  {a:[1,6,7,9],b:[2,4,5,8],bye:3},
+  {a:[1,3,5,7],b:[4,6,8,9],bye:2},
+  {a:[2,4,6,7],b:[3,5,8,9],bye:1},
+  {a:[1,2,3,4],b:[5,6,7,8],bye:9},
+  {a:[1,2,5,6],b:[3,4,7,9],bye:8},
+  {a:[1,2,8,9],b:[3,4,5,6],bye:7},
+  {a:[1,4,5,9],b:[2,3,7,8],bye:6},
+  {a:[1,4,7,8],b:[2,3,6,9],bye:5},
+  {a:[1,3,6,8],b:[2,5,7,9],bye:4},
+  {a:[1,6,7,9],b:[2,4,5,8],bye:3},
+  {a:[1,3,5,7],b:[4,6,8,9],bye:2},
+  {a:[2,4,6,7],b:[3,5,8,9],bye:1},
+];
+
+const COLORS = [
+  '#ef5350','#42a5f5','#66bb6a','#ffa726',
+  '#ab47bc','#26c6da','#d4e157','#ff7043','#8d6e63'
+];
+
+const SHEET_KEY = '2PACX-1vQxtQ4FX1Yfg70tLIGiGYo2VrbM0Vu4BTBrdTYJMIeOWacVyvAHiNO6KOpW7PmY9xV4KcLYb1O2k1Mk';
+
+// 成績シート（デフォルト）
+const CSV_BASE = `https://docs.google.com/spreadsheets/d/e/${SHEET_KEY}/pub?single=true&output=csv`;
+
+// 卓組シート — gid はスプレッドシートURLの #gid=XXXXX で確認
+const TACUGUMI_GID = '1212752704';
+
+// 卓組シート M2:M19 から前半(M2:M10)・後半(M11:M19)の座席割当を取得
+async function fetchSeatNames() {
+  if (!TACUGUMI_GID) return null;
+  const url = `https://docs.google.com/spreadsheets/d/e/${SHEET_KEY}/pub?single=true&output=csv&gid=${TACUGUMI_GID}&range=M2:M19&_=${Date.now()}`;
+  const res = await fetch(url);
+  if (!res.ok) return null;
+  const rows = parseCSV(await res.text());
+  return {
+    namesFirst:  rows.slice(0, 9).map(r => (r[0] ?? '').trim()).filter(Boolean),
+    namesSecond: rows.slice(9, 18).map(r => (r[0] ?? '').trim()).filter(Boolean),
+  };
+}
+
+let chartInst = null;
+
+// ── CSV parser ──────────────────────────────────────────────────
+function parseCSV(text) {
+  // Split lines; handle \r\n and \n
+  return text.trim().split(/\r?\n/).map(line => {
+    // Simple split — values in this sheet don't contain commas
+    return line.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+  });
+}
+
+// ── Sheet data extractor ────────────────────────────────────────
+function extractData(rows) {
+  // 1. Identify the first game row (col A = integer "1")
+  //    and find the contiguous block of game rows (1..N)
+  let firstGameRow = -1;
+  for (let i = 0; i < rows.length; i++) {
+    const a = rows[i][0];
+    if (parseInt(a, 10) === 1 && String(parseInt(a,10)) === a) {
+      firstGameRow = i; break;
+    }
+  }
+  if (firstGameRow === -1) return null;
+
+  // Collect game rows in sequence (with raw row index for half-boundary detection)
+  const gameRows = [];
+  for (let i = firstGameRow; i < rows.length; i++) {
+    const n = Number(rows[i][0]);
+    if (Number.isInteger(n) && n >= 1 && n <= 18) {
+      gameRows.push({ gameNum: n, cells: rows[i].slice(1, 10), rawIndex: i });
+    }
+  }
+  gameRows.sort((a, b) => a.gameNum - b.gameNum);
+
+  // 2. Player names: look for the row just before firstGameRow
+  //    that contains non-numeric strings — these are the names (seats 1-9).
+  //    We look backward from firstGameRow - 1.
+  let names = null;
+  for (let i = firstGameRow - 1; i >= 0; i--) {
+    const candidates = rows[i].slice(1, 10).filter(c => c !== '' && isNaN(Number(c)));
+    if (candidates.length >= 5) {
+      // Use the 9 cells in B..J, keeping empties to preserve seat alignment
+      names = rows[i].slice(1, 10).map(c => c.trim());
+      break;
+    }
+  }
+  // Fallback: try the row at firstGameRow - 2
+  if (!names) {
+    for (let i = 0; i < firstGameRow; i++) {
+      const slice = rows[i].slice(1, 10);
+      if (slice.filter(c => c !== '' && isNaN(Number(c))).length >= 5) {
+        names = slice.map(c => c.trim()); break;
+      }
+    }
+  }
+  if (!names) return null;
+
+  // 2b. 後半戦の座席割当（G9とG10の間にある名前行）
+  const isNameRow = row => row.slice(1, 10).filter(c => c !== '' && isNaN(Number(c))).length >= 5;
+  const g9  = gameRows.find(g => g.gameNum === 9);
+  const g10 = gameRows.find(g => g.gameNum === 10);
+  let namesSecond = null;
+  if (g9 && g10) {
+    for (let i = g9.rawIndex + 1; i < g10.rawIndex; i++) {
+      if (isNameRow(rows[i])) {
+        namesSecond = rows[i].slice(1, 10).map(c => c.trim());
+        break;
+      }
+    }
+  }
+  if (!namesSecond) namesSecond = names; // 後半も同じ割当の場合のフォールバック
+
+  // 3. 小計 / 持越 / 決1 / 決2 / 合計 rows
+  const findRow = label => {
+    for (const row of rows) {
+      if (row[0].trim() === label)
+        return row.slice(1, 10).map(v => v.trim() === '' ? null : parseFloat(v));
+    }
+    return null;
+  };
+
+  return {
+    names,               // = namesFirst (後方互換)
+    namesFirst: names,   // 前半戦 座席i+1 → namesFirst[i]
+    namesSecond,         // 後半戦 座席i+1 → namesSecond[i]
+    gameRows,            // [{gameNum, cells:[9 strings], rawIndex}]
+    subtotals: findRow('小計'),
+    carryover: findRow('持越'),
+    final1:    findRow('決1'),
+    final2:    findRow('決2'),
+    totals:    findRow('合計'),
+  };
+}
+
+// ── Determine completed game count ─────────────────────────────
+// 試合は順番に進む前提。絶対値合計 > 0 なら得点入力済み。
+// 空セル（抜け番）は 0 扱いなので、全員 0 のゲームは未実施と判定。
+function completedGames(gameRows) {
+  let count = 0;
+  for (const g of gameRows) {
+    const absSum = g.cells.reduce((s, v) => {
+      const n = parseFloat(v);
+      return s + (isNaN(n) ? 0 : Math.abs(n));
+    }, 0);
+    if (absSum > 0.001) count++;
+    else break; // 最初の未実施ゲームで打ち切り
+  }
+  return count;
+}
+
+// ── Helpers ────────────────────────────────────────────────────
+function escHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function extractTitle(rows) {
+  for (let r = 0; r < Math.min(2, rows.length); r++) {
+    for (const cell of rows[r]) {
+      const v = cell.trim();
+      if (v.length > 2 && isNaN(Number(v))) return v;
+    }
+  }
+  return '';
+}
+
+// ── Render: Raw sheet table (A1:K25) ──────────────────────────
+function renderRawTable(rows) {
+  const el = document.getElementById('raw-sheet-table');
+  const SUMMARY = new Set(['小計','持越','決1','決2','合計']);
+
+  let foundNames = false, foundFirstGame = false;
+  let html = '<table class="raw-table"><tbody>';
+
+  for (const row of rows.slice(0, 25)) {
+    const cells = row.slice(0, 10); // A-J; check columns computed below
+    const colA  = (cells[0] ?? '').trim();
+    const isGame    = /^\d+$/.test(colA) && +colA >= 1 && +colA <= 18;
+    const isSummary = SUMMARY.has(colA);
+    const isNames   = !isGame && !isSummary &&
+                      cells.slice(1, 10).filter(c => c && isNaN(Number(c))).length >= 5;
+
+    if (isGame && colA === '1') foundFirstGame = true;
+    if (isNames) foundNames = true;
+
+    // 名前行と最初のゲーム行の間の行（座席番号行など）をスキップ
+    if (foundNames && !foundFirstGame && !isNames && !isGame && !isSummary) continue;
+
+    // チェック列を計算（予選：A卓/B卓個別、決勝：全体合計）
+    let checkA = '', checkB = '', checkACls = 'rt-chk', checkBCls = 'rt-chk';
+    const fmt = n => Math.abs(n) < 0.01 ? '✓' : (n > 0 ? '+' : '') + n.toFixed(1);
+    const num = i => { const v = parseFloat(cells[i] ?? ''); return isNaN(v) ? 0 : v; };
+    if (isGame) {
+      const gi  = +colA - 1;
+      const sch = SCHEDULE[gi];
+      const sA  = sch.a.reduce((s, seat) => s + num(seat), 0);
+      const sB  = sch.b.reduce((s, seat) => s + num(seat), 0);
+      checkA = fmt(sA); checkACls = 'rt-chk ' + (Math.abs(sA) < 0.01 ? 'rt-chk-ok' : 'rt-chk-fail');
+      checkB = fmt(sB); checkBCls = 'rt-chk ' + (Math.abs(sB) < 0.01 ? 'rt-chk-ok' : 'rt-chk-fail');
+    } else if (colA === '決1' || colA === '決2') {
+      const total = cells.slice(1).reduce((s, _, i) => s + num(i + 1), 0);
+      checkA = fmt(total); checkACls = 'rt-chk ' + (Math.abs(total) < 0.01 ? 'rt-chk-ok' : 'rt-chk-fail');
+    }
+
+    const rowCls = isNames ? 'rt-names' : isSummary ? 'rt-summary' : isGame ? 'rt-game' : 'rt-other';
+    html += `<tr class="${rowCls}">`;
+    const byeSeat = isGame ? SCHEDULE[+colA - 1].bye : -1;
+    cells.forEach((cell, ci) => {
+      const val = (cell ?? '').trim();
+      let cls = ci === 0 ? 'rt-a' : '';
+      if (ci >= 1 && ci <= 9 && val !== '') {
+        const n = parseFloat(val);
+        if (!isNaN(n)) {
+          if (n > 0) cls += ' rt-pos';
+          else if (n < 0) cls += ' rt-neg';
+          else cls += (isGame && ci === byeSeat) ? ' rt-zero' : ' rt-pos'; // 抜け番の0は暗く、それ以外は正と同色
+        }
+      }
+      html += `<td class="${cls.trim()}">${escHtml(val)}</td>`;
+    });
+    html += `<td class="${checkACls}">${escHtml(checkA)}</td>`;
+    html += `<td class="${checkBCls}">${escHtml(checkB)}</td>`;
+    html += '</tr>';
+  }
+
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+// ── Render: 卓組 (全18戦一覧、次の対局をハイライト) ──────────
+function renderSchedule(data) {
+  const el   = document.getElementById('schedule-body');
+  const done = completedGames(data.gameRows);
+
+  // 座席番号 → プレイヤー名 (前半/後半で切替)
+  const getName = (gi, seat) => {
+    const ns = gi < 9 ? data.namesFirst : data.namesSecond;
+    return ns[seat - 1] || `座席${seat}`;
+  };
+
+  let html = `<table class="schedule">
+    <thead><tr>
+      <th class="sch-g">G</th>
+      <th>A卓</th>
+      <th>B卓</th>
+      <th>抜け番</th>
+    </tr></thead><tbody>`;
+
+  for (let gi = 0; gi < SCHEDULE.length; gi++) {
+    const g      = SCHEDULE[gi];
+    const isDone = gi < done;
+    const isNext = gi === done;
+    const rowCls = isDone ? 'sch-done' : isNext ? 'sch-next' : 'sch-future';
+
+    const aNames   = g.a.map(s => getName(gi, s)).join('　');
+    const bNames   = g.b.map(s => getName(gi, s)).join('　');
+    const byeName  = getName(gi, g.bye);
+    const gLabel   = isNext ? `▶G${gi + 1}` : isDone ? `G${gi + 1}` : `G${gi + 1}`;
+
+    html += `<tr class="${rowCls}">
+      <td class="sch-g">${gLabel}</td>
+      <td>${aNames}</td>
+      <td>${bNames}</td>
+      <td>${byeName}</td>
+    </tr>`;
+  }
+
+  if (done >= SCHEDULE.length) {
+    html += `<tr><td colspan="4" style="color:#81c784;text-align:center;padding:8px">予選終了</td></tr>`;
+  }
+
+  html += '</tbody></table>';
+  el.innerHTML = html;
+
+  // 現在のゲーム行が中央に見えるようスクロール
+  requestAnimationFrame(() => {
+    const wrap = document.querySelector('.schedule-wrap');
+    const row  = wrap?.querySelector('tr.sch-next');
+    if (!wrap || !row) return;
+    const wrapRect = wrap.getBoundingClientRect();
+    const rowRect  = row.getBoundingClientRect();
+    wrap.scrollTop += rowRect.top - wrapRect.top - wrap.clientHeight / 2 + row.clientHeight / 2;
+  });
+}
+
+// ── Render: 決勝出場ライン ─────────────────────────────────────
+function renderFinalists(data) {
+  const el = document.getElementById('finalist-body');
+  if (!data.subtotals) {
+    el.innerHTML = `<span style="color:#666;font-size:.85rem">データなし</span>`; return;
+  }
+  const ranks = data.names
+    .map((name, i) => ({ name, sub: data.subtotals[i] ?? 0 }))
+    .sort((a, b) => b.sub - a.sub);
+
+  const medals = ['🥇','🥈','🥉','4'];
+  el.innerHTML = ranks.map((r, i) => {
+    const cls = i < 4 ? (i === 3 ? 'in-line border-line' : 'in-line') : '';
+    return `<div class="finalist-row ${cls}">
+      <span class="finalist-rank">${medals[i] ?? i + 1}</span>
+      <span class="finalist-name">${r.name}</span>
+      <span class="finalist-score">${r.sub.toFixed(1)}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── Render: 順位表 ─────────────────────────────────────────────
+function renderStandings(data) {
+  const tbody = document.getElementById('standings-body');
+  if (!data.subtotals) { tbody.innerHTML = ''; return; }
+
+  const rows = data.names.map((name, i) => {
+    const sub = data.subtotals?.[i] ?? 0;
+    const car = data.carryover?.[i] ?? (sub / 2);
+    const f1  = data.final1?.[i];
+    const f2  = data.final2?.[i];
+    const tot = data.totals?.[i] ?? (car + (f1 ?? 0) + (f2 ?? 0));
+    return { name, sub, car, f1, f2, tot };
+  }).sort((a, b) => b.tot - a.tot || b.sub - a.sub);
+
+  const medals = ['🥇','🥈','🥉'];
+  const fmt = v => v === null || v === undefined ? '—' : v.toFixed(1);
+  const fourth = rows.length >= 4 ? rows[3].tot : null;
+
+  tbody.innerHTML = rows.map((r, i) => {
+    const fin = i < 4;
+    const med = medals[i] ?? (i + 1);
+    const gap = fourth !== null ? r.tot - fourth : null;
+    const gapStr = gap === null ? '' : (gap > 0.005 ? '+' : '') + gap.toFixed(2);
+    const gapCls = gap === null ? '' : Math.abs(gap) < 0.005 ? 'gap-zero' : gap > 0 ? 'gap-pos' : 'gap-neg';
+    return `<tr class="${fin ? 'finalist-tr' : ''}">
+      <td><span class="medal">${med}</span></td>
+      <td class="name-td">${r.name}</td>
+      <td>${r.sub.toFixed(1)}</td>
+      <td>${r.car.toFixed(2)}</td>
+      <td>${fmt(r.f1)}</td>
+      <td>${fmt(r.f2)}</td>
+      <td>${r.tot.toFixed(2)}</td>
+      <td class="${gapCls}">${gapStr}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Render: Chart ──────────────────────────────────────────────
+function renderChart(data) {
+  const TOTAL = 18;
+  const done  = completedGames(data.gameRows);
+  const labels = ['', ...Array.from({length: TOTAL}, (_, i) => `G${i + 1}`)];
+
+  // 前半はnamesFirst、後半はnamesSecondで座席インデックスを解決
+  const datasets = data.namesFirst.map((name, p) => {
+    let cumul = 0;
+    const points = [0];
+    for (let g = 0; g < TOTAL; g++) {
+      if (g < done) {
+        const halfNames = g < 9 ? data.namesFirst : data.namesSecond;
+        const seatIdx   = halfNames.findIndex(n => n === name);
+        const v = seatIdx >= 0 ? data.gameRows[g]?.cells[seatIdx] : undefined;
+        cumul += (v !== undefined && v !== '' && !isNaN(Number(v))) ? parseFloat(v) : 0;
+        points.push(cumul);
+      } else {
+        points.push(null);
+      }
+    }
+    return {
+      label:           name,
+      data:            points,
+      borderColor:     COLORS[p % COLORS.length],
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      pointRadius: done <= 10 ? 3 : 2,
+      tension: 0,
+      spanGaps: false,
+    };
+  });
+
+  if (chartInst) chartInst.destroy();
+  chartInst = new Chart(document.getElementById('scoreChart'), {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      animation: false,
+      plugins: {
+        legend: { position: 'top', labels: { color: '#ccc', boxWidth: 12, font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}` } }
+      },
+      scales: {
+        x: { ticks: { color: '#999', font: {size:11} }, grid: { color: 'rgba(255,255,255,.06)' } },
+        y: { ticks: { color: '#999', font: {size:11} }, grid: { color: 'rgba(255,255,255,.06)' } }
+      }
+    }
+  });
+}
+
+// ── Main load ──────────────────────────────────────────────────
+async function loadAll() {
+  const btn    = document.getElementById('btn-refresh');
+  const status = document.getElementById('status-bar');
+  btn.disabled = true;
+  status.className = 'status-bar';
+  status.textContent = '読み込み中…';
+
+  try {
+    // 成績シートと卓組シートを並行取得
+    const [mainRes, seatNames] = await Promise.all([
+      fetch(CSV_BASE + '&_=' + Date.now()),
+      fetchSeatNames(),
+    ]);
+    if (!mainRes.ok) throw new Error(`HTTP ${mainRes.status}`);
+    const rows = parseCSV(await mainRes.text());
+    const data = extractData(rows);
+
+    if (!data) throw new Error('データ構造を認識できませんでした。シートの構成を確認してください。');
+
+    // 卓組シートから取得した座席割当で上書き（取得できた場合のみ）
+    if (seatNames && seatNames.namesFirst.length >= 9) {
+      data.namesFirst  = seatNames.namesFirst;
+      data.namesSecond = seatNames.namesSecond.length >= 9 ? seatNames.namesSecond : seatNames.namesFirst;
+      data.names       = data.namesFirst;
+    }
+
+    const sheetTitle = extractTitle(rows);
+    document.getElementById('page-title').textContent =
+      '当日成績表' + (sheetTitle ? `（${sheetTitle}）` : '');
+    renderRawTable(rows);
+    renderSchedule(data);
+    renderStandings(data);
+    renderChart(data);
+
+    const done = completedGames(data.gameRows);
+    status.textContent = `予選 ${done} / 18 試合完了`;
+  } catch (e) {
+    status.className = 'status-bar err';
+    status.textContent = `取得エラー: ${e.message}`;
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+loadAll();
+</script>
+</body>
+</html>
