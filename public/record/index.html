@@ -5,69 +5,101 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>mogejonga — 記録</title>
   <link rel="stylesheet" href="../css/layout.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <style>
-    .record-header {
+    .record-subheader {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 16px;
+      padding: 8px 16px;
       border-bottom: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.2);
     }
-
-    .record-title {
-      font-size: 1rem;
+    .record-subheader-title {
+      font-size: 0.95rem;
       font-weight: bold;
       color: rgba(255,200,50,0.9);
     }
-
-    .btn-open {
+    .btn-ext {
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      padding: 6px 12px;
+      padding: 5px 11px;
       background: rgba(255,255,255,0.07);
       border: 1px solid rgba(255,255,255,0.15);
       border-radius: 6px;
       color: #ccc;
       text-decoration: none;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       white-space: nowrap;
     }
+    .btn-ext:hover { background: rgba(255,255,255,0.13); color: #fff; }
 
-    .btn-open:hover {
-      background: rgba(255,255,255,0.12);
-      color: #fff;
-    }
-
+    /* ── iframe ── */
     .sheet-wrap {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* push content below the site header */
-    .sheet-body {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      /* header height offset handled by padding-top on sheet-wrap */
-    }
-
-    .sheet-frame {
       width: 100%;
-      flex: 1;
+      height: 420px;
+      overflow: hidden;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .sheet-wrap iframe {
+      width: 100%;
+      height: 100%;
       border: none;
       background: #fff;
+    }
+
+    /* ── chart section ── */
+    .chart-section {
+      padding: 16px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .chart-title {
+      font-size: 1rem;
+      font-weight: bold;
+      color: rgba(255,200,50,0.85);
+    }
+    .btn-refresh {
+      padding: 5px 13px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 6px;
+      color: #ccc;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .btn-refresh:hover { background: rgba(255,255,255,0.13); color: #fff; }
+    .btn-refresh:disabled { opacity: 0.4; cursor: default; }
+
+    .chart-wrap {
+      position: relative;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px;
+      padding: 12px;
+    }
+    .chart-status {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #888;
+      padding: 10px 0 4px;
+    }
+    .chart-status.error { color: #ef5350; }
+
+    @media (max-width: 600px) {
+      .sheet-wrap { height: 300px; }
     }
   </style>
 </head>
 <body>
-  <!-- site nav -->
+  <!-- nav -->
   <div class="header">
     <header>
       <ul class="header-list">
@@ -82,36 +114,159 @@
     </header>
   </div>
 
-  <!-- sub-header with open link -->
-  <div class="record-header">
-    <span class="record-title">当日成績表</span>
-    <a class="btn-open"
+  <!-- sub-header -->
+  <div class="record-subheader">
+    <span class="record-subheader-title">当日成績表</span>
+    <a class="btn-ext"
        href="https://docs.google.com/spreadsheets/d/e/2PACX-1vSZ69WloYBrOHN0GNp1ykLBcCFT9QzoAopfbnDPBCKEuuwRhYdcLGWLqSRj_SM1rFW6LybmUm4pc35o/pubhtml"
-       target="_blank" rel="noopener">
-      ↗ 別タブで開く
-    </a>
+       target="_blank" rel="noopener">↗ 別タブで開く</a>
   </div>
 
-  <!-- spreadsheet embed -->
-  <iframe
-    class="sheet-frame"
-    src="https://docs.google.com/spreadsheets/d/e/2PACX-1vSZ69WloYBrOHN0GNp1ykLBcCFT9QzoAopfbnDPBCKEuuwRhYdcLGWLqSRj_SM1rFW6LybmUm4pc35o/pubhtml?widget=false&headers=false"
-    title="当日成績表"
-    loading="lazy"
-    sandbox="allow-scripts allow-same-origin allow-popups">
-  </iframe>
+  <!-- embedded sheet (range=A1:J25 を試す) -->
+  <div class="sheet-wrap">
+    <iframe
+      src="https://docs.google.com/spreadsheets/d/e/2PACX-1vSZ69WloYBrOHN0GNp1ykLBcCFT9QzoAopfbnDPBCKEuuwRhYdcLGWLqSRj_SM1rFW6LybmUm4pc35o/pubhtml?gid=0&range=A1:J25&widget=false&headers=false"
+      title="当日成績表"
+      sandbox="allow-scripts allow-same-origin allow-popups">
+    </iframe>
+  </div>
 
-  <script>
-    // Fill remaining viewport height below nav + sub-header
-    function resizeFrame() {
-      const nav    = document.querySelector('.header');
-      const subHdr = document.querySelector('.record-header');
-      const frame  = document.querySelector('.sheet-frame');
-      const used   = nav.offsetHeight + subHdr.offsetHeight;
-      frame.style.height = (window.innerHeight - used) + 'px';
+  <!-- chart -->
+  <div class="chart-section">
+    <div class="chart-header">
+      <span class="chart-title">ポイント推移グラフ</span>
+      <button class="btn-refresh" id="btn-refresh" onclick="loadChart()">↺ 更新</button>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="scoreChart"></canvas>
+    </div>
+    <div class="chart-status" id="chart-status">読み込み中…</div>
+  </div>
+
+<script>
+const CSV_URL =
+  'https://docs.google.com/spreadsheets/d/e/' +
+  '2PACX-1vSZ69WloYBrOHN0GNp1ykLBcCFT9QzoAopfbnDPBCKEuuwRhYdcLGWLqSRj_SM1rFW6LybmUm4pc35o' +
+  '/pub?gid=0&single=true&output=csv';
+
+const COLORS = [
+  '#ef5350','#42a5f5','#66bb6a','#ffa726',
+  '#ab47bc','#26c6da','#d4e157','#ff7043','#8d6e63'
+];
+
+let chartInstance = null;
+
+// ── CSV parse (simple: no quoted commas in this sheet) ──
+function parseCSV(text) {
+  return text.trim().split('\n').map(line =>
+    line.split(',').map(c => c.trim().replace(/^"|"$/g, ''))
+  );
+}
+
+// ── Find player names row: first row with 5+ non-numeric non-empty cells ──
+function findNames(rows) {
+  for (const row of rows.slice(0, 4)) {
+    const names = row.slice(1).filter(c => c !== '' && isNaN(Number(c)));
+    if (names.length >= 5) return names;
+  }
+  return null;
+}
+
+// ── Find game rows: col A is integer 1–18 ──
+function findGameRows(rows) {
+  return rows.filter(row => {
+    const n = parseInt(row[0], 10);
+    return !isNaN(n) && n >= 1 && n <= 18;
+  });
+}
+
+async function loadChart() {
+  const btn    = document.getElementById('btn-refresh');
+  const status = document.getElementById('chart-status');
+  btn.disabled = true;
+  status.className = 'chart-status';
+  status.textContent = '読み込み中…';
+
+  try {
+    const res  = await fetch(CSV_URL, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    const rows = parseCSV(text);
+
+    const names = findNames(rows);
+    if (!names) throw new Error('プレイヤー名が見つかりませんでした');
+
+    const gameRows = findGameRows(rows);
+    if (gameRows.length === 0) throw new Error('ゲームデータがありません');
+
+    const playerCount = names.length;
+    const gameCount   = gameRows.length;
+
+    // cumulative[p] = [0, after_g1, after_g2, ...]
+    const cumulative = Array.from({length: playerCount}, () => [0]);
+    for (const row of gameRows) {
+      for (let p = 0; p < playerCount; p++) {
+        const prev  = cumulative[p].at(-1);
+        const cell  = row[p + 1] ?? '';
+        const score = cell === '' ? 0 : parseFloat(cell) || 0;
+        cumulative[p].push(prev + score);
+      }
     }
-    resizeFrame();
-    window.addEventListener('resize', resizeFrame);
-  </script>
+
+    const labels   = ['', ...Array.from({length: gameCount}, (_, i) => `G${i + 1}`)];
+    const datasets = names.map((name, i) => ({
+      label:           name,
+      data:            cumulative[i],
+      borderColor:     COLORS[i % COLORS.length],
+      backgroundColor: 'transparent',
+      borderWidth:     2,
+      pointRadius:     cumulative[i].length <= 10 ? 3 : 2,
+      tension:         0.2,
+    }));
+
+    if (chartInstance) chartInstance.destroy();
+    chartInstance = new Chart(document.getElementById('scoreChart'), {
+      type: 'line',
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        animation: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { color: '#ccc', boxWidth: 12, font: { size: 11 } }
+          },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}`
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: '#999', font: { size: 11 } },
+            grid:  { color: 'rgba(255,255,255,0.06)' }
+          },
+          y: {
+            ticks: { color: '#999', font: { size: 11 } },
+            grid:  { color: 'rgba(255,255,255,0.06)' }
+          }
+        }
+      }
+    });
+
+    const entered = gameRows.filter(r => r.slice(1).some(c => c !== '')).length;
+    status.textContent = `${entered} / ${gameCount} 試合入力済み`;
+  } catch (e) {
+    status.className = 'chart-status error';
+    status.textContent = `取得エラー: ${e.message}`;
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+loadChart();
+</script>
 </body>
 </html>
