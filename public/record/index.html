@@ -137,6 +137,7 @@
 <!-- embedded sheet -->
 <div class="sheet-wrap">
   <iframe
+    id="sheet-iframe"
     src="https://docs.google.com/spreadsheets/d/e/2PACX-1vQxtQ4FX1Yfg70tLIGiGYo2VrbM0Vu4BTBrdTYJMIeOWacVyvAHiNO6KOpW7PmY9xV4KcLYb1O2k1Mk/pubhtml?widget=true&amp;headers=false"
     title="当日成績表"
     sandbox="allow-scripts allow-same-origin allow-popups">
@@ -448,6 +449,11 @@ async function loadAll() {
   btn.disabled = true;
   status.className = 'status-bar';
   status.textContent = '読み込み中…';
+
+  // iframe を強制リロード
+  const iframe = document.getElementById('sheet-iframe');
+  const iframeSrc = iframe.src.split('?')[0];
+  iframe.src = iframeSrc + '?widget=true&headers=false&_=' + Date.now();
 
   try {
     const url = CSV_BASE + '&_=' + Date.now();
