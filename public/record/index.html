@@ -541,38 +541,18 @@ function renderFinalists(data) {
   }).join('');
 }
 
-// ── Compute per-player subtotals (half-aware seat mapping) ────
-function computePlayerSubtotals(data) {
-  const done = completedGames(data.gameRows);
-  const sub = {};
-  [...data.namesFirst, ...data.namesSecond].forEach(n => { if (n) sub[n] = sub[n] ?? 0; });
-  for (let g = 0; g < Math.min(data.gameRows.length, done); g++) {
-    const halfNames = g < 9 ? data.namesFirst : data.namesSecond;
-    halfNames.forEach((name, seatIdx) => {
-      if (!name) return;
-      const v = data.gameRows[g].cells[seatIdx];
-      const n = parseFloat(v);
-      if (!isNaN(n)) sub[name] += n;
-    });
-  }
-  return sub;
-}
-
 // ── Render: 順位表 ─────────────────────────────────────────────
 function renderStandings(data) {
   const tbody = document.getElementById('standings-body');
-  const allNames = data.namesFirst.filter(Boolean);
-  if (allNames.length === 0) { tbody.innerHTML = ''; return; }
+  if (!data.subtotals) { tbody.innerHTML = ''; return; }
 
-  const playerSub = computePlayerSubtotals(data);
-
-  const rows = allNames.map((name, i) => {
-    const sub = playerSub[name] ?? 0;
-    const car = sub / 2;
+  const rows = data.names.map((name, i) => {
+    const sub = data.subtotals?.[i] ?? 0;
+    const car = data.carryover?.[i] ?? (sub / 2);
     const f1  = data.final1?.[i];
     const f2  = data.final2?.[i];
-    const tot = car + (f1 ?? 0) + (f2 ?? 0);
-    return { name, sub, car, f1: f1 ?? null, f2: f2 ?? null, tot };
+    const tot = data.totals?.[i] ?? (car + (f1 ?? 0) + (f2 ?? 0));
+    return { name, sub, car, f1, f2, tot };
   }).sort((a, b) => b.tot - a.tot || b.sub - a.sub);
 
   const medals = ['🥇','🥈','🥉'];
