@@ -671,11 +671,18 @@ async function loadAll() {
     if (!data) throw new Error('データ構造を認識できませんでした。シートの構成を確認してください。');
 
     // 卓組シートから取得した座席割当で上書き（取得できた場合のみ）
+    console.log('[DEBUG] seatNames from 卓組シート:', seatNames);
+    console.log('[DEBUG] extractData namesFirst:', data.namesFirst);
+    console.log('[DEBUG] extractData namesSecond:', data.namesSecond);
     if (seatNames && seatNames.namesFirst.length >= 9) {
       data.namesFirst  = seatNames.namesFirst;
       data.namesSecond = seatNames.namesSecond.length >= 9 ? seatNames.namesSecond : seatNames.namesFirst;
       data.names       = data.namesFirst;
     }
+    console.log('[DEBUG] final namesFirst:', data.namesFirst);
+    console.log('[DEBUG] final namesSecond:', data.namesSecond);
+    console.log('[DEBUG] subtotals (小計 row):', data.subtotals);
+    console.log('[DEBUG] gameRows count:', data.gameRows.length, 'done:', completedGames(data.gameRows));
 
     const sheetTitle = extractTitle(rows);
     document.getElementById('page-title').textContent =
