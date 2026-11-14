@@ -195,9 +195,6 @@
   <div id="raw-sheet-table" style="padding:4px 0"></div>
 </div>
 
-<!-- debug panel (remove after investigation) -->
-<div id="debug-panel" style="background:#1a1a2e;border:1px solid #ff9800;border-radius:8px;margin:8px;padding:12px;font-size:.75rem;font-family:monospace;color:#fff;white-space:pre-wrap;display:none"></div>
-
 <!-- dynamic content -->
 <div class="rec-body">
 
@@ -544,27 +541,22 @@ function renderFinalists(data) {
   }).join('');
 }
 
-// ── Compute per-player subtotals (half-aware seat mapping) ────
+// ── Compute per-player subtotals using fixed column layout ────
+// スプレッドシートはプレイヤー固定列のため、列インデックスは全ゲーム共通。
 function computePlayerSubtotals(data) {
-  const done = completedGames(data.gameRows);
+  const colNames = data.columnNames ?? data.namesFirst;
   const sub = {};
-  [...data.namesFirst, ...data.namesSecond].forEach(n => { if (n) sub[n] = sub[n] ?? 0; });
-  for (let g = 0; g < Math.min(data.gameRows.length, done); g++) {
-    const halfNames = g < 9 ? data.namesFirst : data.namesSecond;
-    halfNames.forEach((name, seatIdx) => {
-      if (!name) return;
-      const v = data.gameRows[g].cells[seatIdx];
-      const n = parseFloat(v);
-      if (!isNaN(n)) sub[name] += n;
-    });
-  }
+  colNames.forEach((name, colIdx) => {
+    if (!name) return;
+    sub[name] = data.subtotals?.[colIdx] ?? 0;
+  });
   return sub;
 }
 
 // ── Render: 順位表 ─────────────────────────────────────────────
 function renderStandings(data) {
   const tbody = document.getElementById('standings-body');
-  const allNames = data.namesFirst.filter(Boolean);
+  const allNames = (data.columnNames ?? data.namesFirst).filter(Boolean);
   if (allNames.length === 0) { tbody.innerHTML = ''; return; }
 
   const playerSub = computePlayerSubtotals(data);
@@ -607,15 +599,14 @@ function renderChart(data) {
   const done  = completedGames(data.gameRows);
   const labels = ['', ...Array.from({length: TOTAL}, (_, i) => `G${i + 1}`)];
 
-  // 前半はnamesFirst、後半はnamesSecondで座席インデックスを解決
-  const datasets = data.namesFirst.map((name, p) => {
+  // スプレッドシートはプレイヤー固定列のため、colIdxは全ゲーム共通
+  const colNames = data.columnNames ?? data.namesFirst;
+  const datasets = colNames.map((name, colIdx) => {
     let cumul = 0;
     const points = [0];
     for (let g = 0; g < TOTAL; g++) {
       if (g < done) {
-        const halfNames = g < 9 ? data.namesFirst : data.namesSecond;
-        const seatIdx   = halfNames.findIndex(n => n === name);
-        const v = seatIdx >= 0 ? data.gameRows[g]?.cells[seatIdx] : undefined;
+        const v = data.gameRows[g]?.cells[colIdx];
         cumul += (v !== undefined && v !== '' && !isNaN(Number(v))) ? parseFloat(v) : 0;
         points.push(cumul);
       } else {
@@ -673,29 +664,16 @@ async function loadAll() {
 
     if (!data) throw new Error('データ構造を認識できませんでした。シートの構成を確認してください。');
 
-    // 卓組シートから取得した座席割当で上書き（取得できた場合のみ）
-    console.log('[DEBUG] seatNames from 卓組シート:', seatNames);
-    console.log('[DEBUG] extractData namesFirst:', data.namesFirst);
-    console.log('[DEBUG] extractData namesSecond:', data.namesSecond);
+    // スプレッドシートは「プレイヤー固定列」のため、成績集計はシートの列順（columnNames）を使う。
+    // 卓組シートの座席割当は卓組表示のみに使用し、スコア計算には使わない。
+    data.columnNames = data.namesFirst.slice(); // 列B-Jのプレイヤー順（スコア集計用）
+
+    // 卓組シートから取得した座席割当で上書き（卓組表示用のみ）
     if (seatNames && seatNames.namesFirst.length >= 9) {
       data.namesFirst  = seatNames.namesFirst;
       data.namesSecond = seatNames.namesSecond.length >= 9 ? seatNames.namesSecond : seatNames.namesFirst;
       data.names       = data.namesFirst;
     }
-    // ── visible debug panel ──
-    const done0 = completedGames(data.gameRows);
-    const playerSub0 = computePlayerSubtotals(data);
-    const dbgLines = [
-      `前半名前: [${data.namesFirst.join(', ')}]`,
-      `後半名前: [${data.namesSecond.join(', ')}]`,
-      `小計(シート): [${(data.subtotals || []).join(', ')}]`,
-      `完了ゲーム数: ${done0} / ${data.gameRows.length}`,
-      `── 計算後プレイヤー合計 ──`,
-      ...data.namesFirst.filter(Boolean).map(n => `${n}: ${(playerSub0[n] ?? 0).toFixed(1)}`),
-    ];
-    const dbgEl = document.getElementById('debug-panel');
-    dbgEl.textContent = dbgLines.join('\n');
-    dbgEl.style.display = 'block';
 
     const sheetTitle = extractTitle(rows);
     document.getElementById('page-title').textContent =
