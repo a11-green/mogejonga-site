@@ -195,6 +195,9 @@
   <div id="raw-sheet-table" style="padding:4px 0"></div>
 </div>
 
+<!-- debug panel (remove after investigation) -->
+<div id="debug-panel" style="background:#1a1a2e;border:1px solid #ff9800;border-radius:8px;margin:8px;padding:12px;font-size:.75rem;font-family:monospace;color:#fff;white-space:pre-wrap;display:none"></div>
+
 <!-- dynamic content -->
 <div class="rec-body">
 
@@ -679,10 +682,20 @@ async function loadAll() {
       data.namesSecond = seatNames.namesSecond.length >= 9 ? seatNames.namesSecond : seatNames.namesFirst;
       data.names       = data.namesFirst;
     }
-    console.log('[DEBUG] final namesFirst:', data.namesFirst);
-    console.log('[DEBUG] final namesSecond:', data.namesSecond);
-    console.log('[DEBUG] subtotals (小計 row):', data.subtotals);
-    console.log('[DEBUG] gameRows count:', data.gameRows.length, 'done:', completedGames(data.gameRows));
+    // ── visible debug panel ──
+    const done0 = completedGames(data.gameRows);
+    const playerSub0 = computePlayerSubtotals(data);
+    const dbgLines = [
+      `前半名前: [${data.namesFirst.join(', ')}]`,
+      `後半名前: [${data.namesSecond.join(', ')}]`,
+      `小計(シート): [${(data.subtotals || []).join(', ')}]`,
+      `完了ゲーム数: ${done0} / ${data.gameRows.length}`,
+      `── 計算後プレイヤー合計 ──`,
+      ...data.namesFirst.filter(Boolean).map(n => `${n}: ${(playerSub0[n] ?? 0).toFixed(1)}`),
+    ];
+    const dbgEl = document.getElementById('debug-panel');
+    dbgEl.textContent = dbgLines.join('\n');
+    dbgEl.style.display = 'block';
 
     const sheetTitle = extractTitle(rows);
     document.getElementById('page-title').textContent =
