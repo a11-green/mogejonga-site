@@ -616,7 +616,7 @@ function renderChart(data) {
     return {
       label:           name,
       data:            points,
-      borderColor:     COLORS[p % COLORS.length],
+      borderColor:     COLORS[colIdx % COLORS.length],
       backgroundColor: 'transparent',
       borderWidth: 2,
       pointRadius: done <= 10 ? 3 : 2,
