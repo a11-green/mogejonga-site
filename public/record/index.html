@@ -572,12 +572,12 @@ function renderStandings(data) {
 
   const medals = ['🥇','🥈','🥉'];
   const fmt = v => v === null || v === undefined ? '—' : v.toFixed(1);
-  const fourth = rows.length >= 4 ? rows[3].tot : null;
+  const fourth = rows.length >= 4 ? rows[3].sub : null;
 
   tbody.innerHTML = rows.map((r, i) => {
     const fin = i < 4;
     const med = medals[i] ?? (i + 1);
-    const gap = fourth !== null ? r.tot - fourth : null;
+    const gap = fourth !== null ? r.sub - fourth : null;
     const gapStr = gap === null ? '' : (gap > 0.005 ? '+' : '') + gap.toFixed(2);
     const gapCls = gap === null ? '' : Math.abs(gap) < 0.005 ? 'gap-zero' : gap > 0 ? 'gap-pos' : 'gap-neg';
     return `<tr class="${fin ? 'finalist-tr' : ''}">
